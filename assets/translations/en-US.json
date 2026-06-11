@@ -1,0 +1,17 @@
+{
+  "settings": "Settings",
+  "profile": "My Profile",
+  "language": "Change Language",
+  "history": "History",
+  "favorites": "Favorites",
+  "security": "Security",
+  "about": "About Zoli",
+  "privacy": "Privacy Policy",
+  "privacy_content": "Zoli does not collect any sensitive personal data. Your transactions are secured locally.",
+  "terms": "Terms of Use",
+  "contact": "Contact and Support",
+  "share": "Share Zoli",
+  "rate": "Rate the Application",
+  "updates": "Check for Updates",
+  "technical": "Technical Information"
+}

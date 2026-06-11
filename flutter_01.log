@@ -1,0 +1,78 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d chrome
+
+## exception
+
+TimeoutException: TimeoutException after 0:00:05.000000: Future not completed
+
+```
+#0      Future.timeout.<anonymous closure> (dart:async/future_impl.dart:1042:24)
+<asynchronous suspension>
+#1      WebkitDebugger.enable (package:dwds/src/debugging/webkit_debugger.dart:158:9)
+<asynchronous suspension>
+#2      Debugger._initialize (package:dwds/src/debugging/debugger.dart:253:5)
+<asynchronous suspension>
+#3      Debugger.create (package:dwds/src/debugging/debugger.dart:232:5)
+<asynchronous suspension>
+#4      ChromeProxyService.createIsolate (package:dwds/src/services/chrome/chrome_proxy_service.dart:282:22)
+<asynchronous suspension>
+#5      ChromeProxyService.create (package:dwds/src/services/chrome/chrome_proxy_service.dart:144:5)
+<asynchronous suspension>
+#6      ChromeDebugService.start (package:dwds/src/services/chrome/chrome_debug_service.dart:76:32)
+<asynchronous suspension>
+#7      DevHandler._createChromeAppServices (package:dwds/src/handlers/dev_handler.dart:363:26)
+<asynchronous suspension>
+#8      DevHandler.loadAppServices (package:dwds/src/handlers/dev_handler.dart:333:23)
+<asynchronous suspension>
+#9      DevHandler.createDebugConnectionForChrome (package:dwds/src/handlers/dev_handler.dart:654:30)
+<asynchronous suspension>
+#10     Dwds.debugConnection (package:dwds/dart_web_debug_service.dart:68:14)
+<asynchronous suspension>
+#11     WebDevFS.connect.<anonymous closure> (package:flutter_tools/src/isolated/devfs_web.dart:160:17)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[✓] Flutter (Channel stable, 3.44.0, on Microsoft Windows [version 10.0.26200.8655], locale fr-BJ) [2,4s]
+    • Flutter version 3.44.0 on channel stable at C:\flutter\flutter
+    • Upstream repository https://github.com/flutter/flutter.git
+    • Framework revision 559ffa3f75 (4 weeks ago), 2026-05-15 14:13:13 -0700
+    • Engine revision 4c525dac5e
+    • Dart version 3.12.0
+    • DevTools version 2.57.0
+    • Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, enable-swift-package-manager, omit-legacy-version-file, enable-lldb-debugging, enable-uiscene-migration
+
+[✓] Windows Version (11 Home 64-bit, 25H2, 2009) [14,1s]
+
+[✗] Android toolchain - develop for Android devices [2,7s]
+    • Android SDK at C:\Users\Ulrich IDOHOU\AppData\Local\Android\Sdk
+    • Emulator version 36.5.11.0 (build_id 15261927) (CL:N/A)
+    ✗ cmdline-tools component is missing.
+      Try installing or updating Android Studio.
+      Alternatively, download the tools from https://developer.android.com/studio#command-line-tools-only and make sure to set the ANDROID_HOME environment variable.
+      See https://developer.android.com/studio/command-line for more details.
+
+[✓] Chrome - develop for the web [881ms]
+    • Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[✓] Visual Studio - develop Windows apps (Visual Studio Build Tools 2026 18.6.1) [872ms]
+    • Visual Studio at C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
+    • Visual Studio Build Tools 2026 version 18.6.11819.183
+    • Windows 10 SDK version 10.0.26100.0
+
+[✓] Connected device (3 available) [918ms]
+    • Windows (desktop) • windows • windows-x64    • Microsoft Windows [version 10.0.26200.8655]
+    • Chrome (web)      • chrome  • web-javascript • Google Chrome 149.0.7827.55
+    • Edge (web)        • edge    • web-javascript • Microsoft Edge 149.0.4022.52
+
+[✓] Network resources [2,2s]
+    • All expected network resources are available.
+
+! Doctor found issues in 1 category.
+```
