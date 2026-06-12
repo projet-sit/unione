@@ -39,3 +39,17 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Copie automatique de l'APK release dans E:\Lova\Application\android
+tasks.whenTaskAdded {
+    if (name == "assembleRelease") {
+        doLast {
+            val apkDir = File("${rootProject.projectDir}/../build/app/outputs/flutter-apk")
+            val destDir = File("${rootProject.projectDir}")
+            apkDir.listFiles { f -> f.name.endsWith(".apk") }?.forEach { apk ->
+                apk.copyTo(File(destDir, apk.name), overwrite = true)
+                println("✅ APK copié : ${destDir.absolutePath}/${apk.name}")
+            }
+        }
+    }
+}
