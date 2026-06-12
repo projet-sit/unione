@@ -67,9 +67,8 @@ class MenuActionsScreen extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (context) => UssdFlowScreen(
-          network: reseau.nom,
-          operation: action.titre,
-          themeColor: reseau.couleur,
+          reseau: reseau,
+          action: action,
         ),
       ),
     );

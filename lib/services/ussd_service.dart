@@ -93,13 +93,13 @@ class UssdService {
     String finalCode = template;
     
     data.forEach((key, value) {
-      finalCode = finalCode.replaceAll('[$key]', value.trim());
+      finalCode = finalCode.replaceAll('{{$key}}', value.trim());
     });
 
     // Nettoyage des espaces
     finalCode = finalCode.replaceAll(RegExp(r'\s+'), '');
 
-    if (finalCode.contains('[')) {
+    if (finalCode.contains('{{')) {
       AuditService.logWarning('Certains paramètres du template USSD sont manquants : $finalCode');
       return '';
     }

@@ -32,9 +32,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       query: _searchController.text,
       network: _selectedNetwork,
       startDate: _selectedDate,
-      endDate: _selectedDate != null 
-          ? _selectedDate!.add(const Duration(hours: 23, minutes: 59, seconds: 59)) 
-          : null,
+      endDate: _selectedDate?.add(const Duration(hours: 23, minutes: 59, seconds: 59)),
     );
     setState(() {
       _history = history;
@@ -46,7 +44,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF16213E),
+        backgroundColor: const Color(0xFF1E1E1E),
         title: const Text('Effacer l\'historique ?', style: TextStyle(color: Colors.white)),
         content: const Text(
           'Cette action est irréversible. Toutes vos données locales seront supprimées.',
@@ -60,7 +58,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           TextButton(
             onPressed: () async {
               await _historyService.clearHistory();
-              if (mounted) {
+              if (context.mounted) {
                 Navigator.pop(context);
                 _loadHistory();
               }
@@ -75,7 +73,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A2540),
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         title: const Text('Mon Historique'),
         backgroundColor: Colors.transparent,
@@ -213,7 +211,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   void _showNetworkPicker() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFF16213E),
+      backgroundColor: const Color(0xFF1E1E1E),
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -244,12 +242,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Widget _buildHistoryList() {
+    _history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    Map<String, List<HistoryItem>> groupedHistory = {};
+    for (var item in _history) {
+      final now = DateTime.now();
+      final itemDate = DateTime(item.timestamp.year, item.timestamp.month, item.timestamp.day);
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      
+      String header;
+      if (itemDate == today) {
+        header = "Aujourd'hui";
+      } else if (itemDate == yesterday) {
+        header = "Hier";
+      } else {
+        header = DateFormat('dd MMMM yyyy', 'fr_FR').format(itemDate);
+      }
+      
+      if (!groupedHistory.containsKey(header)) {
+        groupedHistory[header] = [];
+      }
+      groupedHistory[header]!.add(item);
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: _history.length,
+      itemCount: groupedHistory.length,
       itemBuilder: (context, index) {
-        final item = _history[index];
-        return _buildHistoryCard(item);
+        final header = groupedHistory.keys.elementAt(index);
+        final items = groupedHistory[header]!;
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 4, bottom: 12, top: index == 0 ? 0 : 16),
+              child: Text(
+                header.toUpperCase(),
+                style: const TextStyle(
+                  color: Colors.white54,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1.2,
+                ),
+              ),
+            ),
+            ...items.map((item) => _buildHistoryCard(item)),
+          ],
+        );
       },
     );
   }
@@ -311,11 +352,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
-                Text(
-                  DateFormat('dd MMMM yyyy', 'fr_FR').format(item.timestamp),
-                  style: const TextStyle(color: Colors.white30, fontSize: 10),
-                ),
               ],
             ),
           ),

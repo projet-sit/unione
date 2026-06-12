@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../data/ussd_data.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/reseau_card.dart';
-import '../widgets/info_bottom_sheet.dart';
+
 import '../services/history_service.dart';
 import '../models/history_item.dart';
 import 'menu_actions_screen.dart';
@@ -16,7 +16,7 @@ class SelectionReseauScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A2540), // Bleu Nuit
+      backgroundColor: const Color(0xFF121212), // Fond sombre neutre
       body: Stack(
         children: [
           // Background avec dégradé et illustration
@@ -46,9 +46,7 @@ class SelectionReseauScreen extends StatelessWidget {
                       },
                     ),
                   ),
-                  // Bottom Bar
-                  _buildBottomBar(context).animate().fadeIn(delay: 800.ms),
-                  const SizedBox(height: 20),
+
                 ],
               ),
             ),
@@ -66,9 +64,9 @@ class SelectionReseauScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0A2540), // Bleu Nuit
-              Color(0xFF16213E), // Bleu Indigo
-              Color(0xFF051220), // Noir Profond
+              Color(0xFF121212), // Fond sombre
+              Color(0xFF1A1A1A), // Gris sombre
+              Color(0xFF000000), // Noir Profond
             ],
             stops: [0.0, 0.5, 1.0],
           ),
@@ -131,57 +129,7 @@ class SelectionReseauScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomBar(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildUtilityButton(Icons.info_outline, const Color(0xFF00AEEF), () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const InfoBottomSheet(
-              title: 'À propos de Zoli',
-              subtitle: '',
-              content: "Zoli est une application conçue pour simplifier l'accès aux codes USSD des opérateurs mobiles au Bénin (MTN, MOOV, Celtiis). Plus besoin de mémoriser ou chercher les codes — tout est regroupé en un seul endroit, organisé et accessible en quelques secondes.",
-              icon: Icons.info_outline,
-            ),
-          );
-        }),
-        const SizedBox(width: 24),
-        _buildUtilityButton(Icons.code, Colors.white60, () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (context) => const InfoBottomSheet(
-              title: 'À propos du développeur',
-              subtitle: 'Ulrich IDOHOU',
-              content: "Je suis Ulrich IDOHOU, développeur Flutter basé à Abomey-Calavi, Bénin. Passionné par la création d'outils utiles et accessibles pour le quotidien africain, je développe des applications centrées sur l'expérience utilisateur locale.",
-              icon: Icons.person,
-            ),
-          );
-        }),
-      ],
-    );
-  }
 
-  Widget _buildUtilityButton(IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white10),
-        ),
-        child: Icon(icon, color: color, size: 28),
-      ),
-    );
-  }
 
   void _navigateToActions(BuildContext context, dynamic reseau) async {
     await HistoryService().logEvent(

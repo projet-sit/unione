@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 enum HistoryType {
   networkSelection,
