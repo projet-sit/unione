@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'zoli_logo.dart';
+import 'unione_logo.dart';
 
 class AppLogo extends StatelessWidget {
   final double size;
@@ -11,6 +11,6 @@ class AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ZoliLogo(size: size);
+    return UnioneLogo(size: size);
   }
 }

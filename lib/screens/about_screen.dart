@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import '../theme/app_theme.dart';
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -14,9 +15,9 @@ class AboutScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Zoli', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text('Zoli est une application conçue pour simplifier l\'accès aux codes USSD au Bénin.', style: const TextStyle(color: Colors.white70)),
+            Text('UNIONE', style: const TextStyle(color: AppTheme.primary, fontSize: 24, fontWeight: FontWeight.bold)),
+
+            Text('UNIONE est une application conçue pour simplifier l\'accès aux codes USSD au Bénin.', style: const TextStyle(color: Colors.white70)),
             const SizedBox(height: 20),
             Text('Version: 1.0.0+2', style: const TextStyle(color: Colors.white54)),
           ],

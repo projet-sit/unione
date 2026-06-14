@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-class ZoliShimmer extends StatefulWidget {
+class UnioneShimmer extends StatefulWidget {
   final Widget child;
   final Duration duration;
   final Color baseColor;
   final Color highlightColor;
 
-  const ZoliShimmer({
+  const UnioneShimmer({
     super.key,
     required this.child,
     this.duration = const Duration(seconds: 3),
@@ -15,10 +15,10 @@ class ZoliShimmer extends StatefulWidget {
   });
 
   @override
-  State<ZoliShimmer> createState() => _ZoliShimmerState();
+  State<UnioneShimmer> createState() => _UnioneShimmerState();
 }
 
-class _ZoliShimmerState extends State<ZoliShimmer>
+class _UnioneShimmerState extends State<UnioneShimmer>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
 

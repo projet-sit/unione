@@ -67,9 +67,9 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
             const SizedBox(height: 24),
             const Text(
-                  'Zoli',
+                  'UNIONE',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1E1E1E), // Gris très sombre pour contraste sur blanc
                     fontSize: 30,
                     fontWeight: FontWeight.w800,
                     height: 1,
@@ -85,9 +85,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   curve: Curves.easeOut,
                   builder: (context, value, child) {
                     return Text(
-                      'Zoli',
+                      'UNIONE',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF1E1E1E), // Gris très sombre
                         fontSize: 30,
                         fontWeight: FontWeight.w800,
                         letterSpacing: value,

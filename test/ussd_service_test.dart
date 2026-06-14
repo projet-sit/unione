@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:zoli/services/ussd_service.dart';
+import 'package:unione/services/ussd_service.dart';
 
 void main() {
   group('UssdService.buildFromTemplate', () {

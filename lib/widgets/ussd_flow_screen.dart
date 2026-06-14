@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import '../services/ussd_service.dart';
 import '../models/reseau.dart';
 import '../models/action_ussd.dart';
@@ -22,7 +24,7 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
   final Map<String, TextEditingController> _inputControllers = {};
   final TextEditingController _pinController = TextEditingController();
   bool _isSubmitting = false;
-  List<String> _placeholders = [];
+  final List<String> _placeholders = [];
   bool _needsPin = false;
 
   @override
@@ -32,10 +34,12 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     if (widget.action.template != null && widget.action.aBesoinParam) {
       _extractPlaceholders(widget.action.template!);
     } else if (widget.action.codeBase != null) {
+      // Lancement automatique pour les codes simples
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _launchImmediate(widget.action.codeBase!);
       });
     } else if (widget.action.template != null && !widget.action.aBesoinParam) {
+      // Lancement automatique pour les templates sans paramètres
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _launchImmediate(widget.action.template!);
       });
@@ -58,14 +62,47 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     }
   }
 
-  void _launchImmediate(String code) async {
-    await UssdService.launchUssd(
+  /// Exécute immédiatement une requête USSD sans afficher de formulaire.
+  Future<void> _launchImmediate(String code) async {
+    final success = await UssdService.launchUssd(
       context, 
       code, 
       title: widget.action.titre, 
       network: widget.reseau.nom
     );
-    if (mounted) Navigator.pop(context);
+    // Retour automatique sur l'écran précédent
+    if (mounted) {
+      
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<void> _pickContact(TextEditingController controller) async {
+    if (await FlutterContacts.requestPermission()) {
+      final contact = await FlutterContacts.openExternalPick();
+      if (contact != null && contact.phones.isNotEmpty) {
+        String number = contact.phones.first.number;
+        // Nettoyage : enlever espaces, tirets et parenthèses
+        number = number.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+        
+        // Normalisation pour le Bénin
+        if (number.startsWith('+229')) {
+          number = number.substring(4);
+        } else if (number.startsWith('00229')) {
+          number = number.substring(5);
+        }
+        
+        setState(() {
+          controller.text = number;
+        });
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('permission_denied'.tr())),
+        );
+      }
+    }
   }
 
   @override
@@ -80,7 +117,7 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '${widget.reseau.nom} > ${widget.action.titre}',
+          '${widget.reseau.nom} > ${widget.action.titre.tr()}',
           style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
         ),
       ),
@@ -110,37 +147,52 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
               ..._placeholders.map((placeholder) {
                 String label = placeholder;
                 IconData icon = Icons.edit_note_rounded;
+                bool isPhone = false;
                 if (placeholder.toLowerCase().contains('montant')) {
-                  label = 'Montant (FCFA)';
+                  label = 'amount_label'.tr();
                   icon = Icons.attach_money_rounded;
                 } else if (placeholder.toLowerCase().contains('numero') || placeholder.toLowerCase().contains('numéro')) {
-                  label = 'Numéro de téléphone';
+                  label = 'phone_number_label'.tr();
                   icon = Icons.phone_android_rounded;
+                  isPhone = true;
                 }
                 
-                return _buildField(_inputControllers[placeholder]!, label, icon);
+                return _buildField(_inputControllers[placeholder]!, label, icon, isPhone: isPhone);
               }),
               if (_needsPin)
-                _buildField(_pinController, 'Code PIN secret', Icons.lock_outline_rounded, isPin: true),
+                _buildField(_pinController, 'pin_label'.tr(), Icons.lock_outline_rounded, isPin: true),
             ],
           ),
         ),
         const SizedBox(height: 20),
         _buildSubmitButton(() {
-          String ussd = widget.action.template!;
+          final Map<String, String> data = {};
           for (final placeholder in _placeholders) {
-            ussd = ussd.replaceAll('{{$placeholder}}', _inputControllers[placeholder]!.text.trim());
+            data[placeholder] = _inputControllers[placeholder]!.text.trim();
           }
           if (_needsPin) {
-            ussd = ussd.replaceAll('{{pin}}', _pinController.text.trim());
+            data['pin'] = _pinController.text.trim();
           }
+
+          final ussd = UssdService.buildFromTemplate(
+            template: widget.action.template!,
+            data: data,
+          );
+
+          if (ussd.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('invalid_ussd'.tr())),
+            );
+            return;
+          }
+
           _confirmAndLaunch(widget.action.titre, ussd);
         }),
       ],
     ).animate().fadeIn();
   }
 
-  Widget _buildField(TextEditingController controller, String label, IconData icon, {bool isPin = false}) {
+  Widget _buildField(TextEditingController controller, String label, IconData icon, {bool isPin = false, bool isPhone = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: TextField(
@@ -152,6 +204,12 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
           labelText: label,
           labelStyle: TextStyle(color: widget.reseau.couleur.withValues(alpha: 0.7)),
           prefixIcon: Icon(icon, color: widget.reseau.couleur),
+          suffixIcon: isPhone 
+            ? IconButton(
+                icon: Icon(Icons.contact_phone_rounded, color: widget.reseau.couleur),
+                onPressed: () => _pickContact(controller),
+              )
+            : null,
           filled: true,
           fillColor: Colors.white.withValues(alpha: 0.05),
           enabledBorder: OutlineInputBorder(
@@ -181,7 +239,7 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
         ),
         child: _isSubmitting
             ? const CircularProgressIndicator(color: Colors.black)
-            : const Text('LANCER L\'OPÉRATION', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            : Text('launch_operation'.tr(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
       ),
     );
   }
@@ -201,29 +259,38 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
               decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 24),
-            const Text('Confirmation', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+            Text('confirmation'.tr(), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
             const SizedBox(height: 12),
-            Text(summary, style: const TextStyle(color: Colors.white70, fontSize: 16)),
+            Text(summary.tr(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text(code, style: TextStyle(color: widget.reseau.couleur, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+            Text('Voulez-vous lancer cette opération ?', style: TextStyle(color: Colors.white70, fontSize: 14)),
             const SizedBox(height: 32),
             _buildSubmitButton(() async {
+              // On ferme d'abord le bottom sheet
               Navigator.pop(context);
+              
               setState(() => _isSubmitting = true);
               
-              // Bio-auth for sensitive transactions
+              // Authentification biométrique pour les transactions sensibles
               final auth = await UssdService.verifyIdentity();
-              if (!context.mounted) return;
+              if (!mounted) return;
               
               if (auth) {
-                await UssdService.launchUssd(
+                final success = await UssdService.launchUssd(
                   context, 
                   code, 
                   title: summary, 
                   network: widget.reseau.nom
                 );
-                if (context.mounted) Navigator.pop(context);
-              } else {
+                
+                // Si le lancement a réussi, on retourne à l'accueil
+                if (success && mounted) {
+                  
+                  Navigator.of(context).pop();
+                } else if (mounted) {
+                  setState(() => _isSubmitting = false);
+                }
+              } else if (mounted) {
                 setState(() => _isSubmitting = false);
               }
             }),
@@ -234,4 +301,3 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     );
   }
 }
-

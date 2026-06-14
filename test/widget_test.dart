@@ -1,4 +1,4 @@
-// Tests Flutter de l'application Zoli
+// Tests Flutter de l'application UNIONE
 //
 // Ce test vérifie l'écran de verrouillage en isolation, sans instancier
 // ZapApp ni les packages tiers (SecureApplication, SessionTimeoutManager)

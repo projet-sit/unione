@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../models/history_item.dart';
 import '../services/history_service.dart';
 
+/// Écran affichant l'historique complet des actions de l'utilisateur.
+/// Permet de filtrer par texte, par réseau et par date.
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
@@ -23,9 +25,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   @override
   void initState() {
     super.initState();
+    // Chargement initial de l'historique au lancement de l'écran.
     _loadHistory();
   }
 
+  /// Charge ou recharge les données de l'historique depuis la base de données.
   Future<void> _loadHistory() async {
     setState(() => _isLoading = true);
     final history = await _historyService.getHistory(
@@ -40,30 +44,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
   }
 
+  /// Affiche une boîte de dialogue de confirmation avant d'effacer tout l'historique.
   void _confirmClearHistory() {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF1E1E1E),
-        title: const Text('Effacer l\'historique ?', style: TextStyle(color: Colors.white)),
-        content: const Text(
-          'Cette action est irréversible. Toutes vos données locales seront supprimées.',
-          style: TextStyle(color: Colors.white70),
+        title: Text('clear_history'.tr(), style: const TextStyle(color: Colors.white)),
+        content: Text(
+          'clear_history_desc'.tr(),
+          style: const TextStyle(color: Colors.white70),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('ANNULER', style: TextStyle(color: Colors.white54)),
+            child: Text('cancel'.tr(), style: const TextStyle(color: Colors.white54)),
           ),
           TextButton(
             onPressed: () async {
               await _historyService.clearHistory();
               if (context.mounted) {
                 Navigator.pop(context);
-                _loadHistory();
+                _loadHistory(); // Rafraîchissement de la vue.
               }
             },
-            child: const Text('EFFACER TOUT', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: Text('clear_all'.tr(), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -75,42 +80,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text('Mon Historique'),
+        title: Text('history_title'.tr()),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          // Bouton pour effacer l'historique
           IconButton(
             icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
             onPressed: _confirmClearHistory,
-            tooltip: 'Effacer tout',
+            tooltip: 'clear_all'.tr(),
           ),
         ],
       ),
       body: Column(
         children: [
-          _buildFilters(),
+          _buildFilters(), // Zone des filtres (recherche, date, réseau)
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator(color: Color(0xFF00AEEF)))
                 : _history.isEmpty
-                    ? _buildEmptyState()
-                    : _buildHistoryList(),
+                    ? _buildEmptyState() // Vue si aucun résultat
+                    : _buildHistoryList(), // Liste des activités
           ),
         ],
       ),
     );
   }
 
+  /// Construit la barre de recherche et les boutons de filtrage.
   Widget _buildFilters() {
     return Container(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
+          // Champ de recherche par texte
           TextField(
             controller: _searchController,
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
-              hintText: 'Rechercher...',
+              hintText: 'search_placeholder'.tr(),
               hintStyle: const TextStyle(color: Colors.white54),
               prefixIcon: const Icon(Icons.search, color: Colors.white54),
               filled: true,
@@ -125,10 +133,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
+              // Filtre par date
               Expanded(
                 child: _buildFilterChip(
                   label: _selectedDate == null 
-                      ? 'Toutes les dates' 
+                      ? 'all_dates'.tr() 
                       : DateFormat('dd/MM/yyyy').format(_selectedDate!),
                   icon: Icons.calendar_today,
                   onTap: () async {
@@ -150,9 +159,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
               const SizedBox(width: 8),
+              // Filtre par réseau mobile
               Expanded(
                 child: _buildFilterChip(
-                  label: _selectedNetwork ?? 'Tous les réseaux',
+                  label: _selectedNetwork ?? 'all_networks'.tr(),
                   icon: Icons.cell_tower,
                   onTap: () {
                     _showNetworkPicker();
@@ -170,6 +180,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Un bouton de filtre stylisé (chip) avec icône et option de suppression.
   Widget _buildFilterChip({
     required String label,
     required IconData icon,
@@ -208,6 +219,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Affiche un sélecteur de réseau dans une feuille modale.
   void _showNetworkPicker() {
     showModalBottomSheet(
       context: context,
@@ -216,12 +228,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (context) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text('Sélectionner un réseau', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Text('select_network_filter'.tr(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
           ListTile(
-            title: const Text('Tous les réseaux', style: TextStyle(color: Colors.white)),
+            title: Text('all_networks'.tr(), style: const TextStyle(color: Colors.white)),
             onTap: () {
               setState(() => _selectedNetwork = null);
               Navigator.pop(context);
@@ -241,9 +253,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Construit la liste des éléments de l'historique groupés par date.
   Widget _buildHistoryList() {
+    // Tri pour s'assurer du bon ordre.
     _history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
+    // Groupement des éléments par titre de section (Aujourd'hui, Hier, Date).
     Map<String, List<HistoryItem>> groupedHistory = {};
     for (var item in _history) {
       final now = DateTime.now();
@@ -253,11 +268,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       
       String header;
       if (itemDate == today) {
-        header = "Aujourd'hui";
+        header = "today".tr();
       } else if (itemDate == yesterday) {
-        header = "Hier";
+        header = "yesterday".tr();
       } else {
-        header = DateFormat('dd MMMM yyyy', 'fr_FR').format(itemDate);
+        header = DateFormat('dd MMMM yyyy', context.locale.toString()).format(itemDate);
       }
       
       if (!groupedHistory.containsKey(header)) {
@@ -276,6 +291,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Entête de la section (Date)
             Padding(
               padding: EdgeInsets.only(left: 4, bottom: 12, top: index == 0 ? 0 : 16),
               child: Text(
@@ -288,6 +304,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ),
               ),
             ),
+            // Cartes d'activités pour cette date
             ...items.map((item) => _buildHistoryCard(item)),
           ],
         );
@@ -295,6 +312,33 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Traduit et formate la description d'un élément d'historique.
+  String _getLocalizedDescription(HistoryItem item) {
+    if (item.description.contains('|')) {
+      final parts = item.description.split('|');
+      final key = parts[0];
+      final value = parts.length > 1 ? parts[1] : '';
+      return key.tr(args: [value]);
+    }
+    
+    // Support pour les anciens formats de description (legacy)
+    if (item.description.startsWith("Code lancé : ")) {
+      final code = item.description.replaceFirst("Code lancé : ", "");
+      return "history_ussd_executed".tr(args: [code]);
+    }
+    if (item.description.startsWith("Code lancé: ")) {
+      final code = item.description.replaceFirst("Code lancé: ", "");
+      return "history_ussd_executed".tr(args: [code]);
+    }
+    if (item.description.startsWith("Choix de l'opérateur ")) {
+      final operator = item.description.replaceFirst("Choix de l'opérateur ", "");
+      return "history_network_selected".tr(args: [operator]);
+    }
+    
+    return item.description.tr();
+  }
+
+  /// Construit une carte individuelle pour un événement de l'historique.
   Widget _buildHistoryCard(HistoryItem item) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -307,6 +351,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Icône indicatrice du type d'action
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
@@ -323,10 +368,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    // Titre de l'action
                     Text(
-                      item.title,
+                      item.title.tr(),
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
+                    // Heure de l'action
                     Text(
                       DateFormat('HH:mm').format(item.timestamp),
                       style: const TextStyle(color: Colors.white54, fontSize: 12),
@@ -334,10 +381,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
                 const SizedBox(height: 4),
+                // Description détaillée
                 Text(
-                  item.description,
+                  _getLocalizedDescription(item),
                   style: const TextStyle(color: Colors.white70, fontSize: 14),
                 ),
+                // Badge du réseau si applicable
                 if (item.network != null) ...[
                   const SizedBox(height: 8),
                   Container(
@@ -360,6 +409,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     ).animate().fadeIn().slideX(begin: 0.1);
   }
 
+  /// Vue affichée quand aucun historique n'est disponible ou trouvé.
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -368,7 +418,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           Icon(Icons.history_toggle_off, size: 80, color: Colors.white.withValues(alpha: 0.1)),
           const SizedBox(height: 16),
           Text(
-            'Aucun historique trouvé',
+            'no_history'.tr(),
             style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 18),
           ),
         ],
@@ -376,6 +426,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Retourne l'icône correspondante à chaque type d'activité.
   IconData _getTypeIcon(HistoryType type) {
     switch (type) {
       case HistoryType.networkSelection: return Icons.cell_tower;
@@ -388,6 +439,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  /// Retourne la couleur thématique pour chaque type d'activité.
   Color _getTypeColor(HistoryType type) {
     switch (type) {
       case HistoryType.ussdLaunch: return const Color(0xFF00AEEF);

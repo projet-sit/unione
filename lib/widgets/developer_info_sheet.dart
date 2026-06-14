@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_theme.dart';
 
 class DeveloperInfoSheet extends StatelessWidget {
   const DeveloperInfoSheet({super.key});
@@ -7,7 +8,7 @@ class DeveloperInfoSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: const Color(0xFF1E1E1E),
+        color: Color(0xFF1E1E1E),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -87,9 +88,9 @@ class DeveloperInfoSheet extends StatelessWidget {
                     const Icon(Icons.info_outline, color: Colors.white54, size: 20),
                     const SizedBox(width: 12),
                     const Text(
-                      'À propos de Zoli',
+                      'À propos de UNIONE',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppTheme.primary,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -98,7 +99,7 @@ class DeveloperInfoSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  "Zoli est une application conçue pour simplifier l'accès aux codes USSD des opérateurs mobiles au Bénin (MTN, MOOV, Celtiis). Plus besoin de mémoriser ou chercher les codes — tout est regroupé en un seul endroit, organisé et accessible en quelques secondes.",
+                  "UNIONE est une application conçue pour simplifier l'accès aux codes USSD des opérateurs mobiles au Bénin (MTN, MOOV, Celtiis). Plus besoin de mémoriser ou chercher les codes — tout est regroupé en un seul endroit, organisé et accessible en quelques secondes.",
                   style: TextStyle(
                     color: Colors.white70,
                     fontSize: 15,

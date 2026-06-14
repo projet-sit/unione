@@ -2,7 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+/// Widget affichant le logo officiel de MTN Bénin.
+/// Utilise une image réelle (assets/logos/mtn.png) avec un fallback graphique.
 class MtnLogo extends StatelessWidget {
+  /// Taille du logo.
   final double size;
 
   const MtnLogo({super.key, this.size = 44});
@@ -13,7 +16,7 @@ class MtnLogo extends StatelessWidget {
       height: size,
       width: size,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFCC00),
+        color: const Color(0xFFFFCC00), // Jaune MTN officiel
         shape: BoxShape.circle,
         boxShadow: [
           BoxShadow(
@@ -22,25 +25,38 @@ class MtnLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned.fill(child: CustomPaint(painter: _MtnWavesPainter())),
-          Text(
-            'MTN',
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: size * 0.28,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(size / 2),
+        child: Image.asset(
+          'assets/logos/mtn.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          // Si l'image n'est pas trouvée, on affiche le logo généré par code
+          errorBuilder: (context, error, stackTrace) {
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                Positioned.fill(child: CustomPaint(painter: _MtnWavesPainter())),
+                Text(
+                  'MTN',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: size * 0.28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
 }
 
+/// Peintre pour les ondes décoratives du logo MTN (fallback).
 class _MtnWavesPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {

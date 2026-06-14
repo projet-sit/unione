@@ -1,7 +1,7 @@
-# Zoli App - Project Instructions
+# UNIONE App - Project Instructions
 
 ## Project Overview
-Flutter application initialized for the "Zoli" project.
+Flutter application initialized for the "UNIONE" project.
 
 ## Tech Stack
 - **Framework:** Flutter

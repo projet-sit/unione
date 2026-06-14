@@ -7,6 +7,7 @@ import 'package:local_session_timeout/local_session_timeout.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/security_service.dart';
+import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +19,7 @@ void main() async {
 
   runApp(
     EasyLocalization(
-      supportedLocales: const [Locale('fr', 'FR'), Locale('en', 'US')],
+      supportedLocales: const [Locale('fr', 'FR')],
       path: 'assets/translations',
       fallbackLocale: const Locale('fr', 'FR'),
       child: const ZapApp(),
@@ -37,18 +38,25 @@ class ZapApp extends StatelessWidget {
       nativeRemoveDelay: 500,
       child: Builder(
         builder: (context) {
-          return MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: context.locale,
-            title: 'Zoli',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.darkTheme,
-            home: SecureGate(
-              opacity: 0.9,
-              lockedBuilder: (context, notifier) => _buildLockedScreen(notifier),
-              child: const SplashScreen(),
-            ),
+          return ListenableBuilder(
+            listenable: themeNotifier,
+            builder: (context, _) {
+              return MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: context.locale,
+                title: 'UNIONE',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightTheme,
+                // On force le mode clair uniquement
+                themeMode: ThemeMode.light,
+                home: SecureGate(
+                  opacity: 0.9,
+                  lockedBuilder: (context, notifier) => _buildLockedScreen(notifier),
+                  child: const SplashScreen(),
+                ),
+              );
+            },
           );
         },
       ),

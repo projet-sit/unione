@@ -1,25 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'security_service.dart';
 import 'history_service.dart';
 import '../models/history_item.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'dart:io';
 
-/// Service USSD optimisé et sécurisé.
+/// Service USSD optimisé, sécurisé et automatisé.
+/// Gère le lancement des codes, la validation des permissions et la journalisation.
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
   static final HistoryService _historyService = HistoryService();
 
-  /// Vérifie l'identité de l'utilisateur avant une action sensible.
+  /// Vérifie l'identité de l'utilisateur via biométrie avant une action sensible.
   static Future<bool> verifyIdentity() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
       final bool canAuthenticate = canAuthenticateWithBiometrics || await _auth.isDeviceSupported();
 
-      if (!canAuthenticate) return true; // On laisse passer si le device n'est pas sécurisé
+      if (!canAuthenticate) return true;
 
       return await _auth.authenticate(
-        localizedReason: 'Veuillez vous authentifier pour valider la transaction',
+        localizedReason: 'auth_reason'.tr(),
         options: const AuthenticationOptions(
           stickyAuth: true,
           biometricOnly: false,
@@ -31,91 +36,93 @@ class UssdService {
     }
   }
 
-  /// Lance un code USSD de manière sécurisée.
+  /// Lance un code USSD. Tente d'abord l'appel direct, puis le dialer en repli.
   static Future<bool> launchUssd(BuildContext context, String code, {String? title, String? network}) async {
     final trimmedCode = code.trim();
 
     if (trimmedCode.isEmpty) {
-      AuditService.logWarning('Tentative de lancement d\'un code USSD vide.');
-      _showFailure(context, 'Code USSD invalide.');
+      if (context.mounted) _showFailure(context, 'invalid_ussd'.tr());
       return false;
     }
 
-    final isUssd = trimmedCode.startsWith('*') && trimmedCode.endsWith('#');
-    final isPlainNumber = RegExp(r'^\d+$').hasMatch(trimmedCode);
-    
-    if (!isUssd && !isPlainNumber) {
-      AuditService.logWarning('Format invalide : $trimmedCode');
-      _showFailure(context, 'Format non supporté.');
-      return false;
-    }
+    // Normalisation du code pour les services Android
+    String encodedCode = trimmedCode;
+    if (!encodedCode.endsWith('#')) encodedCode += '#';
+    if (!encodedCode.startsWith('*')) encodedCode = '*';
 
     try {
-      // Masquage partiel dans les logs pour la sécurité
-      final displayCode = trimmedCode.length > 4 
-          ? '${trimmedCode.substring(0, 3)}...#' 
-          : trimmedCode;
-      AuditService.logInfo('Lancement USSD : $displayCode');
-      
-      final launched = await FlutterPhoneDirectCaller.callNumber(trimmedCode);
+      // 1. Demande de permission
+      await Permission.phone.request(); if (!context.mounted) return false;
+      if (!context.mounted) return false;
+
+      // 2. Tentative d'appel DIRECT (Invisible sur la plupart des Android)
+      bool? launched = await FlutterPhoneDirectCaller.callNumber(encodedCode);
+
+      // 3. Repli sur le numéroteur système si l'appel direct échoue
+      if (launched != true) {
+        final Uri telUri = Uri(
+          scheme: 'tel',
+          path: encodedCode,
+        );
+        
+        bool canLaunch = await canLaunchUrl(telUri);
+        if (!context.mounted) return false;
+
+        if (canLaunch) {
+          await launchUrl(telUri);
+          if (!context.mounted) return false;
+          launched = true;
+        }
+      }
 
       if (launched == true) {
-        // Sécurité : Ne jamais enregistrer le code USSD brut s'il peut contenir un PIN
-        final historyDescription = trimmedCode.length > 8 && trimmedCode.contains('*')
-            ? 'Code lancé : ${trimmedCode.substring(0, trimmedCode.lastIndexOf('*') + 1)}...#'
-            : 'Code lancé : $trimmedCode';
+        // Enregistrement anonymisé dans l'historique
+        final displayValue = (encodedCode.length > 8 && encodedCode.contains('*'))
+            ? '\...#'
+            : encodedCode;
 
         await _historyService.logEvent(
-          title: title ?? 'Exécution USSD',
-          description: historyDescription,
+          title: title ?? 'Opération USSD',
+          description: 'history_ussd_executed|\',
           network: network,
           type: HistoryType.ussdLaunch,
         );
+        return true;
       } else {
-        throw Exception('L\'application téléphone n\'a pas pu lancer l\'appel.');
+        throw Exception('Impossible de lancer l\'appel.');
       }
-
-      return true;
     } catch (e, stack) {
-      AuditService.logError('Erreur lors du lancement USSD', e, stack);
+      AuditService.logError('Échec USSD', e, stack);
       if (!context.mounted) return false;
-
-      _showFailure(context, 'Échec du lancement. Vérifiez les permissions.');
+      _showFailure(context, 'launch_failed'.tr());
       return false;
     }
   }
 
-  /// Construit un code USSD à partir d'un template et de données.
+  /// Construit dynamiquement un code USSD complexe à partir d'un modèle.
   static String buildFromTemplate({
     required String template,
     required Map<String, String> data,
   }) {
     String finalCode = template;
-    
     data.forEach((key, value) {
-      finalCode = finalCode.replaceAll('{{$key}}', value.trim());
+      finalCode = finalCode.replaceAll('{{\}}', value.trim());
     });
-
-    // Nettoyage des espaces
     finalCode = finalCode.replaceAll(RegExp(r'\s+'), '');
-
-    if (finalCode.contains('{{')) {
-      AuditService.logWarning('Certains paramètres du template USSD sont manquants : $finalCode');
-      return '';
-    }
-
+    if (finalCode.contains('{{')) return '';
     return finalCode;
   }
 
+  /// Affiche un message d'erreur stylisé.
   static void _showFailure(BuildContext context, String message) {
     if (!context.mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
         backgroundColor: Colors.redAccent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
       ),
     );
   }

@@ -1,4 +1,4 @@
-name: zoli
+name: unione
 description: "Assistant USSD intelligent pour le Bénin."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -47,6 +47,9 @@ dependencies:
   flutter_phone_direct_caller: ^2.1.1
   intl: any
   easy_localization: ^3.0.7
+  flutter_contacts: ^1.1.9+2
+  sim_card_info: ^1.0.1
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -68,6 +71,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/translations/
+    - assets/icon.png
+    - assets/logos/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
