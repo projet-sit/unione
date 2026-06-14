@@ -9,13 +9,10 @@ import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:io';
 
-/// Service USSD optimisé, sécurisé et automatisé.
-/// Gère le lancement des codes, la validation des permissions et la journalisation.
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
   static final HistoryService _historyService = HistoryService();
 
-  /// Vérifie l'identité de l'utilisateur via biométrie avant une action sensible.
   static Future<bool> verifyIdentity() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
@@ -36,7 +33,6 @@ class UssdService {
     }
   }
 
-  /// Lance un code USSD. Tente d'abord l'appel direct, puis le dialer en repli.
   static Future<bool> launchUssd(BuildContext context, String code, {String? title, String? network}) async {
     final trimmedCode = code.trim();
 
@@ -45,26 +41,22 @@ class UssdService {
       return false;
     }
 
-    // Normalisation du code pour les services Android
     String encodedCode = trimmedCode;
     if (!encodedCode.endsWith('#')) encodedCode += '#';
-    if (!encodedCode.startsWith('*')) encodedCode = '*';
+    if (!encodedCode.startsWith('*')) encodedCode = '*$encodedCode';
 
     try {
-      // 1. Demande de permission
-      await Permission.phone.request(); if (!context.mounted) return false;
+      await Permission.phone.request();
       if (!context.mounted) return false;
 
-      // 2. Tentative d'appel DIRECT (Invisible sur la plupart des Android)
       bool? launched = await FlutterPhoneDirectCaller.callNumber(encodedCode);
 
-      // 3. Repli sur le numéroteur système si l'appel direct échoue
       if (launched != true) {
         final Uri telUri = Uri(
           scheme: 'tel',
           path: encodedCode,
         );
-        
+
         bool canLaunch = await canLaunchUrl(telUri);
         if (!context.mounted) return false;
 
@@ -76,14 +68,13 @@ class UssdService {
       }
 
       if (launched == true) {
-        // Enregistrement anonymisé dans l'historique
         final displayValue = (encodedCode.length > 8 && encodedCode.contains('*'))
-            ? '\...#'
+            ? '${encodedCode.substring(0, encodedCode.lastIndexOf('*') + 1)}...#'
             : encodedCode;
 
         await _historyService.logEvent(
           title: title ?? 'Opération USSD',
-          description: 'history_ussd_executed|\',
+          description: 'history_ussd_executed|$displayValue',
           network: network,
           type: HistoryType.ussdLaunch,
         );
@@ -99,21 +90,19 @@ class UssdService {
     }
   }
 
-  /// Construit dynamiquement un code USSD complexe à partir d'un modèle.
   static String buildFromTemplate({
     required String template,
     required Map<String, String> data,
   }) {
     String finalCode = template;
     data.forEach((key, value) {
-      finalCode = finalCode.replaceAll('{{\}}', value.trim());
+      finalCode = finalCode.replaceAll('{{$key}}', value.trim());
     });
     finalCode = finalCode.replaceAll(RegExp(r'\s+'), '');
     if (finalCode.contains('{{')) return '';
     return finalCode;
   }
 
-  /// Affiche un message d'erreur stylisé.
   static void _showFailure(BuildContext context, String message) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

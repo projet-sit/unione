@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+import '../services/ussd_service.dart';
 import '../models/reseau.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/reseau_header.dart';
@@ -9,8 +9,6 @@ import '../models/action_ussd.dart';
 import '../data/ussd_data.dart';
 import 'forfaits_screen.dart';
 
-/// Écran principal affichant la liste des services disponibles pour un réseau.
-/// AUCUNE SOUS-OPTION : L'accès est direct.
 class MenuActionsScreen extends StatelessWidget {
   final Reseau reseau;
 
@@ -18,11 +16,10 @@ class MenuActionsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Récupération de la liste plate des actions
     final actions = UssdData.actions[reseau.type] ?? [];
 
     return Scaffold(
-      backgroundColor: Colors.white, // Forcé sur blanc
+      backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black87),
@@ -56,13 +53,66 @@ class MenuActionsScreen extends StatelessWidget {
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-  /// Gere l action avec une simplicite maximale.
+                  mainAxisSpacing: 16,
+                  crossAxisSpacing: 16,
+                  childAspectRatio: 1.1,
+                ),
+                itemCount: actions.length,
+                itemBuilder: (context, index) {
+                  final action = actions[index];
+                  return ActionTile(
+                    action: action,
+                    reseau: reseau,
+                    onTap: () => _handleAction(context, action),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _handleAction(BuildContext context, ActionUssd action) async {
     if (action.forfaits != null && action.forfaits!.isNotEmpty) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => ForfaitsScreen(reseau: reseau, parentAction: action))); return; }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ForfaitsScreen(
+            reseau: reseau,
+            parentAction: action,
+          ),
+        ),
+      );
+      return;
+    }
+
     if (!action.aBesoinParam && action.codeBase != null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lancement...'), duration: Duration(seconds: 1)));
-      await UssdService.launchUssd(context, action.codeBase!, title: action.titre, network: reseau.nom); return; }
-    Navigator.push(context, MaterialPageRoute(builder: (context) => UssdFlowScreen(reseau: reseau, action: action)));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Lancement...'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      
+      await UssdService.launchUssd(
+        context, 
+        action.codeBase!,
+        title: action.titre,
+        network: reseau.nom,
+      );
+      return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => UssdFlowScreen(
+          reseau: reseau,
+          action: action,
+        ),
+      ),
+    );
   }
 }
