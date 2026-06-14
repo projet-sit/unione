@@ -34,12 +34,10 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     if (widget.action.template != null && widget.action.aBesoinParam) {
       _extractPlaceholders(widget.action.template!);
     } else if (widget.action.codeBase != null) {
-      // Lancement automatique pour les codes simples
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _launchImmediate(widget.action.codeBase!);
       });
     } else if (widget.action.template != null && !widget.action.aBesoinParam) {
-      // Lancement automatique pour les templates sans paramètres
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _launchImmediate(widget.action.template!);
       });
@@ -62,17 +60,14 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     }
   }
 
-  /// Exécute immédiatement une requête USSD sans afficher de formulaire.
   Future<void> _launchImmediate(String code) async {
-    final success = await UssdService.launchUssd(
-      context, 
-      code, 
-      title: widget.action.titre, 
+    await UssdService.launchUssd(
+      context,
+      code,
+      title: widget.action.titre,
       network: widget.reseau.nom
     );
-    // Retour automatique sur l'écran précédent
     if (mounted) {
-      
       Navigator.of(context).pop();
     }
   }
@@ -82,25 +77,15 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
       final contact = await FlutterContacts.openExternalPick();
       if (contact != null && contact.phones.isNotEmpty) {
         String number = contact.phones.first.number;
-        // Nettoyage : enlever espaces, tirets et parenthèses
         number = number.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-        
-        // Normalisation pour le Bénin
         if (number.startsWith('+229')) {
           number = number.substring(4);
         } else if (number.startsWith('00229')) {
           number = number.substring(5);
         }
-        
         setState(() {
           controller.text = number;
         });
-      }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('permission_denied'.tr())),
-        );
       }
     }
   }
@@ -151,12 +136,11 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
                 if (placeholder.toLowerCase().contains('montant')) {
                   label = 'amount_label'.tr();
                   icon = Icons.attach_money_rounded;
-                } else if (placeholder.toLowerCase().contains('numero') || placeholder.toLowerCase().contains('numéro')) {
+                } else if (placeholder.toLowerCase().contains('numero')) {
                   label = 'phone_number_label'.tr();
                   icon = Icons.phone_android_rounded;
                   isPhone = true;
                 }
-                
                 return _buildField(_inputControllers[placeholder]!, label, icon, isPhone: isPhone);
               }),
               if (_needsPin)
@@ -165,31 +149,50 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
           ),
         ),
         const SizedBox(height: 20),
-        _buildSubmitButton(() {
-          final Map<String, String> data = {};
-          for (final placeholder in _placeholders) {
-            data[placeholder] = _inputControllers[placeholder]!.text.trim();
-          }
-          if (_needsPin) {
-            data['pin'] = _pinController.text.trim();
-          }
-
-          final ussd = UssdService.buildFromTemplate(
-            template: widget.action.template!,
-            data: data,
-          );
-
-          if (ussd.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('invalid_ussd'.tr())),
-            );
-            return;
-          }
-
-          _confirmAndLaunch(widget.action.titre, ussd);
-        }),
+        _buildSubmitButton(_executeOperation),
       ],
     ).animate().fadeIn();
+  }
+
+  Future<void> _executeOperation() async {
+    final Map<String, String> data = {};
+    for (final placeholder in _placeholders) {
+      data[placeholder] = _inputControllers[placeholder]!.text.trim();
+    }
+    if (_needsPin) {
+      data['pin'] = _pinController.text.trim();
+    }
+
+    final ussd = UssdService.buildFromTemplate(
+      template: widget.action.template!,
+      data: data,
+    );
+
+    if (ussd.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('invalid_ussd'.tr())));
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+
+    final auth = await UssdService.verifyIdentity();
+    if (!mounted) return;
+
+    if (auth) {
+      final success = await UssdService.launchUssd(
+        context,
+        ussd,
+        title: widget.action.titre,
+        network: widget.reseau.nom
+      );
+      if (success && mounted) {
+        Navigator.of(context).pop();
+      } else if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    } else {
+      setState(() => _isSubmitting = false);
+    }
   }
 
   Widget _buildField(TextEditingController controller, String label, IconData icon, {bool isPin = false, bool isPhone = false}) {
@@ -204,7 +207,7 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
           labelText: label,
           labelStyle: TextStyle(color: widget.reseau.couleur.withValues(alpha: 0.7)),
           prefixIcon: Icon(icon, color: widget.reseau.couleur),
-          suffixIcon: isPhone 
+          suffixIcon: isPhone
             ? IconButton(
                 icon: Icon(Icons.contact_phone_rounded, color: widget.reseau.couleur),
                 onPressed: () => _pickContact(controller),
@@ -240,63 +243,6 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
         child: _isSubmitting
             ? const CircularProgressIndicator(color: Colors.black)
             : Text('launch_operation'.tr(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
-      ),
-    );
-  }
-
-  void _confirmAndLaunch(String summary, String code) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              height: 4, width: 40,
-              decoration: BoxDecoration(color: Colors.white12, borderRadius: BorderRadius.circular(2)),
-            ),
-            const SizedBox(height: 24),
-            Text('confirmation'.tr(), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 12),
-            Text(summary.tr(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('Voulez-vous lancer cette opération ?', style: TextStyle(color: Colors.white70, fontSize: 14)),
-            const SizedBox(height: 32),
-            _buildSubmitButton(() async {
-              // On ferme d'abord le bottom sheet
-              Navigator.pop(context);
-              
-              setState(() => _isSubmitting = true);
-              
-              // Authentification biométrique pour les transactions sensibles
-              final auth = await UssdService.verifyIdentity();
-              if (!mounted) return;
-              
-              if (auth) {
-                final success = await UssdService.launchUssd(
-                  context, 
-                  code, 
-                  title: summary, 
-                  network: widget.reseau.nom
-                );
-                
-                // Si le lancement a réussi, on retourne à l'accueil
-                if (success && mounted) {
-                  
-                  Navigator.of(context).pop();
-                } else if (mounted) {
-                  setState(() => _isSubmitting = false);
-                }
-              } else if (mounted) {
-                setState(() => _isSubmitting = false);
-              }
-            }),
-            const SizedBox(height: 12),
-          ],
-        ),
       ),
     );
   }

@@ -56,51 +56,13 @@ class MenuActionsScreen extends StatelessWidget {
               child: GridView.builder(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 1.1,
-                ),
-                itemCount: actions.length,
-                itemBuilder: (context, index) {
-                  final action = actions[index];
-                  return ActionTile(
-                        action: action,
-                        reseau: reseau,
-                        onTap: () => _handleAction(context, action),
-                      );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Gère la navigation directe vers le service ou la liste des forfaits.
-  void _handleAction(BuildContext context, ActionUssd action) {
-    // Si l'action contient des forfaits, on va directement à la liste des prix
+  /// Gere l action avec une simplicite maximale.
+  void _handleAction(BuildContext context, ActionUssd action) async {
     if (action.forfaits != null && action.forfaits!.isNotEmpty) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ForfaitsScreen(
-            reseau: reseau,
-            parentAction: action,
-          ),
-        ),
-      );
-    } else {
-      // Sinon, on va vers le flux USSD (formulaire ou lancement direct)
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => UssdFlowScreen(
-            reseau: reseau,
-            action: action,
-          ),
-        ),
-      );
-    }
+      Navigator.push(context, MaterialPageRoute(builder: (context) => ForfaitsScreen(reseau: reseau, parentAction: action))); return; }
+    if (!action.aBesoinParam && action.codeBase != null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Lancement...'), duration: Duration(seconds: 1)));
+      await UssdService.launchUssd(context, action.codeBase!, title: action.titre, network: reseau.nom); return; }
+    Navigator.push(context, MaterialPageRoute(builder: (context) => UssdFlowScreen(reseau: reseau, action: action)));
   }
 }
