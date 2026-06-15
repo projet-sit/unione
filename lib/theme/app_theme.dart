@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Couleurs principales
-  static const Color primary = Color(0xFF00F2FF); // Electric Blue
-  static const Color background = Color(0xFF121212);
-  static const Color surface = Colors.black;
+  // Couleurs principales Modernes
+  static const Color primary = Color(0xFF007BFF); // Blue Accent
+  static const Color background = Color(0xFF0F172A); // Deep Slate
+  static const Color surface = Color(0xFF1E293B);
   static const Color textPrimary = Colors.white;
-  static const Color textSecondary = Color(0xFFAAAAAA);
+  static const Color textSecondary = Color(0xFF94A3B8);
 
-  // Couleurs Thème Clair
-  static const Color lightPrimary = Color(0xFF0284C7); // Sky Blue
-  static const Color lightBackground = Color(0xFFF8FAFC); // Slate off-white
-  static const Color lightSurface = Colors.white;
-  static const Color lightTextPrimary = Color(0xFF0F172A); // Slate dark
-  static const Color lightTextSecondary = Color(0xFF475569); // Slate medium
+  // Couleurs Thème Clair Raffiné (Adouci pour les yeux)
+  static const Color lightPrimary = Color(0xFF2563EB); // Royal Blue
+  static const Color lightBackground = Color(0xFFEDF2F7); // Gris très clair (plus doux que F8FAFC)
+  static const Color lightSurface = Color(0xFFF7FAFC); // Blanc cassé (plus doux que pur white)
+  static const Color lightTextPrimary = Color(0xFF1A202C); // Gris très sombre
+  static const Color lightTextSecondary = Color(0xFF4A5568); // Gris moyen
 
   // Thème sombre global
   static ThemeData darkTheme = ThemeData(
@@ -22,84 +22,92 @@ class AppTheme {
     brightness: Brightness.dark,
     colorScheme: ColorScheme.dark(
       primary: primary,
-      secondary: primary.withValues(alpha: 0.7),
+      secondary: primary.withValues(alpha: 0.8),
       surface: surface,
       onSurface: textPrimary,
-      surfaceContainerHighest: Color(0xFF1E1E1E),
+      surfaceContainerHighest: Color(0xFF334155),
     ),
     scaffoldBackgroundColor: background,
-    fontFamily: GoogleFonts.inter().fontFamily,
+    fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
     
     appBarTheme: AppBarTheme(
-      backgroundColor: background,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.plusJakartaSans(
         color: textPrimary,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
       ),
       iconTheme: const IconThemeData(color: textPrimary),
     ),
 
     textTheme: TextTheme(
-      displayLarge: GoogleFonts.inter(color: textPrimary, fontWeight: FontWeight.w900),
-      titleLarge: GoogleFonts.inter(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 20),
-      bodyLarge: GoogleFonts.inter(color: textPrimary, fontWeight: FontWeight.w600),
-      bodyMedium: GoogleFonts.inter(color: textSecondary),
+      displayLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w800),
+      titleLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 22),
+      bodyLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w600),
+      bodyMedium: GoogleFonts.plusJakartaSans(color: textSecondary),
     ),
 
     cardTheme: CardThemeData(
-      color: Color(0xFF161616),
+      color: Color(0xFF1E293B),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Colors.white10),
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
       ),
       elevation: 0,
     ),
   );
 
-  // Thème clair global
+  // Thème clair global (Principalement utilisé)
   static ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
     colorScheme: ColorScheme.light(
       primary: lightPrimary,
-      secondary: lightPrimary.withValues(alpha: 0.7),
+      secondary: lightPrimary.withValues(alpha: 0.8),
       surface: lightSurface,
       onSurface: lightTextPrimary,
-      surfaceContainerHighest: Color(0xFFF1F5F9),
+      surfaceContainerHighest: Color(0xFFE2E8F0),
     ),
     scaffoldBackgroundColor: lightBackground,
-    fontFamily: GoogleFonts.inter().fontFamily,
+    fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
     
     appBarTheme: AppBarTheme(
-      backgroundColor: lightBackground,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
-      titleTextStyle: GoogleFonts.inter(
+      titleTextStyle: GoogleFonts.plusJakartaSans(
         color: lightTextPrimary,
-        fontSize: 18,
-        fontWeight: FontWeight.w700,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
       ),
       iconTheme: const IconThemeData(color: lightTextPrimary),
     ),
 
     textTheme: TextTheme(
-      displayLarge: GoogleFonts.inter(color: lightTextPrimary, fontWeight: FontWeight.w900),
-      titleLarge: GoogleFonts.inter(color: lightTextPrimary, fontWeight: FontWeight.w700, fontSize: 20),
-      bodyLarge: GoogleFonts.inter(color: lightTextPrimary, fontWeight: FontWeight.w600),
-      bodyMedium: GoogleFonts.inter(color: lightTextSecondary),
+      displayLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w800),
+      titleLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w700, fontSize: 22),
+      bodyLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w600),
+      bodyMedium: GoogleFonts.plusJakartaSans(color: lightTextSecondary),
     ),
 
     cardTheme: CardThemeData(
-      color: Colors.white,
+      color: lightSurface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: Color(0xFFCBD5E0)),
       ),
       elevation: 2,
-      shadowColor: Colors.black.withValues(alpha: 0.05),
+      shadowColor: Color(0xFF0F172A).withValues(alpha: 0.04),
+    ),
+    
+    elevatedButtonTheme: ElevatedButtonThemeData(
+      style: ElevatedButton.styleFrom(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+      ),
     ),
   );
 }

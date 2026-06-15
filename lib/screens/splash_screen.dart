@@ -66,12 +66,12 @@ class _SplashScreenState extends State<SplashScreen> {
                   duration: 300.ms,
                 ),
             const SizedBox(height: 24),
-            const Text(
+            Text(
                   'UNIONE',
                   style: TextStyle(
-                    color: Color(0xFF1E1E1E), // Gris très sombre pour contraste sur blanc
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 30,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     height: 1,
                   ),
                 )
@@ -87,9 +87,9 @@ class _SplashScreenState extends State<SplashScreen> {
                     return Text(
                       'UNIONE',
                       style: TextStyle(
-                        color: const Color(0xFF1E1E1E), // Gris très sombre
+                        color: Theme.of(context).colorScheme.onSurface,
                         fontSize: 30,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: value,
                         height: 1,
                       ),

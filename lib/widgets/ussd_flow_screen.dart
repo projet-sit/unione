@@ -73,8 +73,8 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
   }
 
   Future<void> _pickContact(TextEditingController controller) async {
-    if (await FlutterContacts.requestPermission()) {
-      final contact = await FlutterContacts.openExternalPick();
+    if (await FlutterContacts.permissions.request(PermissionType.read) == PermissionStatus.granted) {
+      final contact = await FlutterContacts.native.showPicker();
       if (contact != null && contact.phones.isNotEmpty) {
         String number = contact.phones.first.number;
         number = number.replaceAll(RegExp(r'[\s\-\(\)]'), '');
@@ -90,21 +90,53 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     }
   }
 
+  Future<void> _executeOperation() async {
+    setState(() => _isSubmitting = true);
+    
+    final Map<String, String> data = {};
+    _inputControllers.forEach((key, controller) {
+      data[key] = controller.text;
+    });
+    
+    if (_needsPin) {
+      data['pin'] = _pinController.text;
+    }
+    
+    final code = UssdService.buildFromTemplate(
+      template: widget.action.template!,
+      data: data,
+    );
+    
+    await UssdService.launchUssd(
+      context, 
+      code,
+      title: widget.action.titre,
+      network: widget.reseau.nom
+    );
+    
+    if (mounted) {
+      setState(() => _isSubmitting = false);
+      Navigator.of(context).pop();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, color: onSurfaceColor),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          '${widget.reseau.nom} > ${widget.action.titre.tr()}',
-          style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+          widget.action.titre.tr(),
+          style: TextStyle(color: onSurfaceColor, fontSize: 18, fontWeight: FontWeight.w800),
         ),
+        centerTitle: true,
       ),
       body: SafeArea(
         child: Padding(
@@ -119,7 +151,11 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
     if (widget.action.template != null && widget.action.aBesoinParam) {
       return _buildInputForm();
     }
-    return const Center(child: CircularProgressIndicator());
+    return Center(
+      child: CircularProgressIndicator(
+        valueColor: AlwaysStoppedAnimation<Color>(widget.reseau.couleur),
+      ),
+    );
   }
 
   Widget _buildInputForm() {
@@ -129,6 +165,7 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
         Expanded(
           child: ListView(
             children: [
+              const SizedBox(height: 10),
               ..._placeholders.map((placeholder) {
                 String label = placeholder;
                 IconData icon = Icons.edit_note_rounded;
@@ -150,99 +187,89 @@ class _UssdFlowScreenState extends State<UssdFlowScreen> {
         ),
         const SizedBox(height: 20),
         _buildSubmitButton(_executeOperation),
+        const SizedBox(height: 10),
       ],
-    ).animate().fadeIn();
-  }
-
-  Future<void> _executeOperation() async {
-    final Map<String, String> data = {};
-    for (final placeholder in _placeholders) {
-      data[placeholder] = _inputControllers[placeholder]!.text.trim();
-    }
-    if (_needsPin) {
-      data['pin'] = _pinController.text.trim();
-    }
-
-    final ussd = UssdService.buildFromTemplate(
-      template: widget.action.template!,
-      data: data,
-    );
-
-    if (ussd.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('invalid_ussd'.tr())));
-      return;
-    }
-
-    setState(() => _isSubmitting = true);
-
-    final auth = await UssdService.verifyIdentity();
-    if (!mounted) return;
-
-    if (auth) {
-      final success = await UssdService.launchUssd(
-        context,
-        ussd,
-        title: widget.action.titre,
-        network: widget.reseau.nom
-      );
-      if (success && mounted) {
-        Navigator.of(context).pop();
-      } else if (mounted) {
-        setState(() => _isSubmitting = false);
-      }
-    } else {
-      setState(() => _isSubmitting = false);
-    }
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, curve: Curves.easeOut);
   }
 
   Widget _buildField(TextEditingController controller, String label, IconData icon, {bool isPin = false, bool isPhone = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: TextField(
-        controller: controller,
-        obscureText: isPin,
-        keyboardType: TextInputType.number,
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: widget.reseau.couleur.withValues(alpha: 0.7)),
-          prefixIcon: Icon(icon, color: widget.reseau.couleur),
-          suffixIcon: isPhone
-            ? IconButton(
-                icon: Icon(Icons.contact_phone_rounded, color: widget.reseau.couleur),
-                onPressed: () => _pickContact(controller),
-              )
-            : null,
-          filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.05),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: const BorderSide(color: Colors.white12),
+      padding: const EdgeInsets.only(bottom: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: widget.reseau.couleur),
+          const SizedBox(height: 10),
+          TextField(
+            controller: controller,
+            obscureText: isPin,
+            keyboardType: TextInputType.number,
+            style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
+            decoration: InputDecoration(
+              prefixIcon: Icon(icon, color: widget.reseau.couleur),
+              suffixIcon: isPhone
+                ? Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: IconButton(
+                        icon: Icon(Icons.contact_phone_rounded, color: widget.reseau.couleur),
+                        onPressed: () => _pickContact(controller),
+                      ),
+                  )
+                : null,
+              filled: true,
+              fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+              contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide(color: widget.reseau.couleur, width: 2),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
   Widget _buildSubmitButton(VoidCallback onPressed) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 60,
+      height: 64,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: widget.reseau.couleur.withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: ElevatedButton(
         onPressed: _isSubmitting ? null : onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: widget.reseau.couleur,
-          foregroundColor: Colors.black,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           elevation: 0,
         ),
         child: _isSubmitting
-            ? const CircularProgressIndicator(color: Colors.black)
-            : Text('launch_operation'.tr(), style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            ? const CircularProgressIndicator(color: Colors.white)
+            : Text(
+                'launch_operation'.tr(), 
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 17, letterSpacing: 0.5)
+              ),
       ),
     );
   }

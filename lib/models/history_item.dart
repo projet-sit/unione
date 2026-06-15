@@ -3,8 +3,6 @@ enum HistoryType {
   networkSelection,
   ussdLaunch,
   search,
-  favoriteAdd,
-  favoriteRemove,
   navigation,
   other
 }

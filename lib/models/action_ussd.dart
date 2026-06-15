@@ -1,5 +1,3 @@
-import 'forfait.dart';
-
 enum ActionType { information, transfer, credit, bundle, other }
 
 class ActionUssd {
@@ -11,7 +9,6 @@ class ActionUssd {
   final ActionType type;
   final bool aBesoinParam;
   final List<ActionUssd>? sousActions;
-  final List<Forfait>? forfaits;
 
   const ActionUssd({
     required this.titre,
@@ -22,6 +19,5 @@ class ActionUssd {
     this.template,
     this.aBesoinParam = false,
     this.sousActions,
-    this.forfaits,
   });
 }

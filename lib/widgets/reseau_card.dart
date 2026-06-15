@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/reseau.dart';
-import 'unione_shimmer.dart';
 
 class ReseauCard extends StatelessWidget {
   final Reseau reseau;
@@ -16,29 +15,22 @@ class ReseauCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF101C2E) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isDetected 
-              ? reseau.couleur 
-              : reseau.couleur.withValues(alpha: isDark ? 0.35 : 0.25),
-          width: isDetected ? 2 : 1.5,
-        ),
+        color: Theme.of(context).cardTheme.color,
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: reseau.couleur.withValues(alpha: isDetected ? 0.20 : 0.10),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+            color: reseau.couleur.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
-            blurRadius: 12,
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
@@ -47,112 +39,82 @@ class ReseauCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
-          splashColor: reseau.couleur.withValues(alpha: 0.15),
-          highlightColor: reseau.couleur.withValues(alpha: 0.08),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24),
-            child: Stack(
+          borderRadius: BorderRadius.circular(28),
+          splashColor: reseau.couleur.withValues(alpha: 0.1),
+          highlightColor: reseau.couleur.withValues(alpha: 0.05),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
               children: [
-                Positioned(
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 5,
-                    decoration: BoxDecoration(
-                      color: reseau.couleur,
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(24),
-                        bottomLeft: Radius.circular(24),
-                      ),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        reseau.couleur.withValues(alpha: 0.15),
+                        reseau.couleur.withValues(alpha: 0.05),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(22),
+                  ),
+                  child: Center(
+                    child: Hero(
+                      tag: 'logo_${reseau.nom}',
+                      child: reseau.logo(size: 38),
                     ),
                   ),
                 ),
-                Positioned(
-                  right: -20,
-                  top: -20,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RadialGradient(
-                        colors: [
-                          reseau.couleur.withValues(alpha: 0.12),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24.0,
-                    vertical: 22.0,
-                  ),
-                  child: Row(
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: reseau.couleur.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: isDetected ? reseau.couleur : reseau.couleur.withValues(alpha: 0.25),
-                            width: isDetected ? 2 : 1,
-                          ),
-                        ),
-                        child: Center(
-                          child: reseau.logo(size: 30),
+                      Text(
+                        reseau.nom,
+                        style: TextStyle(
+                          color: onSurfaceColor,
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.5,
                         ),
                       ),
-                      const SizedBox(width: 18),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${reseau.nom} Bénin',
-                              style: TextStyle(
-                                color: onSurfaceColor,
-                                fontSize: 19,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: -0.3,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Réseau mobile',
-                              style: TextStyle(
-                                color: onSurfaceColor.withValues(alpha: 0.5),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: reseau.couleur.withValues(alpha: 0.10),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: reseau.couleur.withValues(alpha: 0.20),
-                            width: 1,
-                          ),
+                          color: reseau.couleur.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(
-                          Icons.chevron_right,
-                          color: reseau.couleur,
-                          size: 22,
+                        child: Text(
+                          'Bénin',
+                          style: TextStyle(
+                            color: reseau.couleur,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.chevron_right_rounded,
+                    color: onSurfaceColor.withValues(alpha: 0.4),
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 8),
               ],
             ),
           ),

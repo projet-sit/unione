@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/reseau.dart';
 import '../models/action_ussd.dart';
-import '../models/forfait.dart';
 
 /// Classe regroupant toutes les données statiques des réseaux et services USSD actualisées pour 2025.
 /// Conformité avec le passage aux 10 chiffres et l'harmonisation de l'ARCEP.
@@ -30,13 +29,13 @@ class UssdData {
 
   /// Mapping des actions USSD par type de réseau.
   static final Map<ReseauType, List<ActionUssd>> actions = {
-    // --- SERVICES MTN BÉNIN (MAJ 2025) ---
+    // --- SERVICES MTN BÉNIN (MAJ 2026) ---
     ReseauType.mtn: [
       ActionUssd(
         titre: 'Solde principal',
         type: ActionType.information,
         icone: Icons.account_balance_outlined,
-        codeBase: '*104#',
+        codeBase: '*126#',
       ),
       ActionUssd(
         titre: 'MTN MoMo',
@@ -51,53 +50,32 @@ class UssdData {
         codeBase: '*103#',
       ),
       ActionUssd(
-        titre: 'Menu Services (*199#)',
+        titre: 'Menu Services',
         type: ActionType.information,
         icone: Icons.grid_view_rounded,
         codeBase: '*199#',
       ),
       ActionUssd(
-        titre: 'Transfert Me2U',
-        type: ActionType.transfer,
-        template: '*102*{{numero}}*{{montant}}*{{pin}}#',
-        icone: Icons.send_outlined,
-        aBesoinParam: true,
-      ),
-      ActionUssd(
-        titre: 'MTN Internet',
+        titre: 'Portail Forfaits',
         type: ActionType.bundle,
-        icone: Icons.wifi,
+        icone: Icons.shopping_bag_outlined,
         codeBase: '*123#',
-        forfaits: [
-          Forfait(prix: '100', data: '175 Mo', duree: '24h', codeUssd: '*123*100#'),
-          Forfait(prix: '200', data: '370 Mo', duree: '24h', codeUssd: '*123*200#'),
-          Forfait(prix: '500', data: '1.2 Go', duree: '72h', codeUssd: '*123*500#'),
-          Forfait(prix: '1000', data: '2.5 Go', duree: '7j', codeUssd: '*123*1000#'),
-          Forfait(prix: '2000', data: '5.5 Go', duree: '30j', codeUssd: '*123*2000#'),
-          Forfait(prix: '5000', data: '15 Go', duree: '30j', codeUssd: '*123*5000#'),
-        ],
       ),
       ActionUssd(
-        titre: 'MTN Maxi',
-        type: ActionType.bundle,
-        icone: Icons.phone_in_talk,
-        codeBase: '*173#',
-        forfaits: [
-          Forfait(prix: '100', data: 'Maxi 100F', duree: '24h', codeUssd: '*173*100#'),
-          Forfait(prix: '200', data: 'Maxi 200F', duree: '24h', codeUssd: '*173*200#'),
-          Forfait(prix: '500', data: 'Maxi 500F', duree: '48h', codeUssd: '*173*500#'),
-          Forfait(prix: '1000', data: 'Maxi 1000F', duree: '7j', codeUssd: '*173*1000#'),
-        ],
+        titre: 'XtraTime',
+        type: ActionType.credit,
+        icone: Icons.access_time_rounded,
+        codeBase: '*785#',
       ),
     ],
 
-    // --- SERVICES MOOV AFRICA BÉNIN (MAJ 2025) ---
+    // --- SERVICES MOOV AFRICA BÉNIN (MAJ 2026) ---
     ReseauType.moov: [
       ActionUssd(
         titre: 'Solde principal',
         type: ActionType.information,
         icone: Icons.account_balance_outlined,
-        codeBase: '*101#',
+        codeBase: '*104#',
       ),
       ActionUssd(
         titre: 'Moov Money',
@@ -106,56 +84,44 @@ class UssdData {
         codeBase: '*855#',
       ),
       ActionUssd(
+        titre: 'Moov Bomi',
+        type: ActionType.bundle,
+        icone: Icons.flash_on_rounded,
+        codeBase: '*855*2#',
+      ),
+      ActionUssd(
         titre: 'Mon numéro',
         type: ActionType.information,
         icone: Icons.person_pin_outlined,
-        codeBase: '*100*1*1#',
+        codeBase: '*199*1*3#',
       ),
       ActionUssd(
-        titre: 'Menu Services (*199#)',
+        titre: 'Menu Services',
         type: ActionType.information,
         icone: Icons.grid_view_rounded,
         codeBase: '*199#',
       ),
       ActionUssd(
-        titre: 'Transfert Me2U',
-        type: ActionType.transfer,
-        template: '*102*{{montant}}*{{numero}}*{{pin}}#',
-        icone: Icons.send_outlined,
-        aBesoinParam: true,
-      ),
-      ActionUssd(
         titre: 'Moov Internet',
         type: ActionType.bundle,
         icone: Icons.wifi,
-        codeBase: '*130#',
-        forfaits: [
-          Forfait(prix: '100', data: 'Internet 100F', duree: '24h', codeUssd: '*130*100#'),
-          Forfait(prix: '200', data: 'Internet 200F', duree: '24h', codeUssd: '*130*200#'),
-          Forfait(prix: '500', data: 'Internet 500F', duree: '3j', codeUssd: '*130*500#'),
-          Forfait(prix: '1000', data: 'Internet 1000F', duree: '7j', codeUssd: '*130*1000#'),
-        ],
+        codeBase: '*123#',
       ),
       ActionUssd(
-        titre: 'Moov Sayaa',
+        titre: 'Moov Forfaits Voix',
         type: ActionType.bundle,
         icone: Icons.phone_in_talk,
         codeBase: '*173#',
-        forfaits: [
-          Forfait(prix: '100', data: 'Sayaa 100F', duree: '24h', codeUssd: '*173*100#'),
-          Forfait(prix: '200', data: 'Sayaa 200F', duree: '24h', codeUssd: '*173*200#'),
-          Forfait(prix: '500', data: 'Sayaa 500F', duree: '3j', codeUssd: '*173*500#'),
-        ],
       ),
     ],
 
-    // --- SERVICES CELTIIS BÉNIN (MAJ 2025) ---
+    // --- SERVICES CELTIIS BÉNIN (MAJ 2026) ---
     ReseauType.celtiis: [
       ActionUssd(
         titre: 'Solde principal',
         type: ActionType.information,
         icone: Icons.account_balance_outlined,
-        codeBase: '*104#',
+        codeBase: '*104*1*1#',
       ),
       ActionUssd(
         titre: 'Celtiis Cash',
@@ -164,27 +130,34 @@ class UssdData {
         codeBase: '*889#',
       ),
       ActionUssd(
+        titre: 'Solde Forfait',
+        type: ActionType.information,
+        icone: Icons.signal_cellular_alt_rounded,
+        codeBase: '*104*1*2#',
+      ),
+      ActionUssd(
         titre: 'Mon numéro',
         type: ActionType.information,
         icone: Icons.person_pin_outlined,
         codeBase: '*199*7*4#',
       ),
       ActionUssd(
-        titre: 'Menu Services (*199#)',
-        type: ActionType.information,
+        titre: 'Menu Pass',
+        type: ActionType.bundle,
         icone: Icons.grid_view_rounded,
         codeBase: '*199#',
       ),
       ActionUssd(
-        titre: 'Forfaits IllimiNet',
-        type: ActionType.bundle,
-        icone: Icons.wifi,
-        codeBase: '*199*4#',
-        forfaits: [
-          Forfait(prix: '100', data: 'IllimiNet 100F', duree: '24h', codeUssd: '*199*4*100#'),
-          Forfait(prix: '500', data: 'IllimiNet 500F', duree: '24h', codeUssd: '*199*4*500#'),
-          Forfait(prix: '1000', data: 'IllimiNet 1000F', duree: '7j', codeUssd: '*199*4*1000#'),
-        ],
+        titre: 'Programme Fidélité',
+        type: ActionType.other,
+        icone: Icons.star_outline_rounded,
+        codeBase: '*133#',
+      ),
+      ActionUssd(
+        titre: 'Service client',
+        type: ActionType.other,
+        icone: Icons.support_agent_rounded,
+        codeBase: '7373',
       ),
     ],
   };

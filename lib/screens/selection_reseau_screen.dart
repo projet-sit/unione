@@ -65,74 +65,121 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Positioned.fill(
       child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? const [
-                    Color(0xFF121212),
-                    Color(0xFF1A1A1A),
-                    Color(0xFF000000),
-                  ]
-                : const [
-                    Color(0xFFF8FAFC),
-                    Color(0xFFF1F5F9),
-                    Color(0xFFE2E8F0),
-                  ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: CustomPaint(
-          painter: _BackgroundPainter(
-            color: isDark ? Colors.white.withValues(alpha: 0.03) : Colors.black.withValues(alpha: 0.02),
-          ),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        child: Stack(
+          children: [
+            Positioned(
+              top: -100,
+              right: -100,
+              child: Container(
+                width: 300,
+                height: 300,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -150,
+              left: -100,
+              child: Container(
+                width: 400,
+                height: 400,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.03),
+                ),
+              ),
+            ),
+            CustomPaint(
+              size: Size.infinite,
+              painter: _BackgroundPainter(
+                color: isDark ? Colors.white.withValues(alpha: 0.02) : Colors.black.withValues(alpha: 0.01),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            const AppLogo(size: 45),
-            const SizedBox(width: 12),
-            Text(
-              'UNIONE',
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface,
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const AppLogo(size: 32),
+              ),
+              const SizedBox(width: 14),
+              Text(
+                'UNIONE',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                )
+              ],
+            ),
+            child: IconButton(
+              icon: Icon(Icons.settings_outlined, color: Theme.of(context).colorScheme.onSurface),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
               ),
             ),
-          ],
-        ),
-        IconButton(
-          icon: Icon(Icons.settings, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const SettingsScreen()),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildTitle(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        'select_network'.tr(),
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface,
-          fontSize: 30,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -1,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'select_network'.tr(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 32,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
+            height: 1.1,
+          ),
         ),
-      ),
+        const SizedBox(height: 8),
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ],
     );
   }
 

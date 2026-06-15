@@ -17,10 +17,11 @@ class InfoBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Container(
       decoration: const BoxDecoration(
-        color: Color(0xFF1E1E1E),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -31,7 +32,7 @@ class InfoBottomSheet extends StatelessWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.white24,
+              color: colorScheme.onSurface.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -46,10 +47,10 @@ class InfoBottomSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF00AEEF).withValues(alpha: 0.15),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(icon, color: const Color(0xFF00AEEF), size: 32)
+                      child: Icon(icon, color: colorScheme.primary, size: 32)
                           .animate(onPlay: (controller) => controller.repeat())
                           .shimmer(duration: 2000.ms, color: Colors.white24),
                     ),
@@ -60,20 +61,20 @@ class InfoBottomSheet extends StatelessWidget {
                         children: [
                           Text(
                             title,
-                            style: const TextStyle(
-                              color: Colors.white,
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
                               fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w900,
                             ),
                           ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.1),
                           if (subtitle.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Text(
                               subtitle,
-                              style: const TextStyle(
-                                color: Color(0xFF00AEEF),
+                              style: TextStyle(
+                                color: colorScheme.primary,
                                 fontSize: 16,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w800,
                               ),
                             ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.1),
                           ],
@@ -87,10 +88,11 @@ class InfoBottomSheet extends StatelessWidget {
                 
                 Text(
                   content,
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
                     fontSize: 15,
                     height: 1.5,
+                    fontWeight: FontWeight.w500,
                   ),
                 ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
                 

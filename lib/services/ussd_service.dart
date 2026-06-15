@@ -7,7 +7,6 @@ import 'history_service.dart';
 import '../models/history_item.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'dart:io';
 
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -22,10 +21,7 @@ class UssdService {
 
       return await _auth.authenticate(
         localizedReason: 'auth_reason'.tr(),
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false,
-        ),
+        authMessages: const [], // Optionnel, mais évite les erreurs de paramètres nommés
       );
     } catch (e) {
       AuditService.logError('Erreur d\'authentification locale', e);
@@ -42,8 +38,16 @@ class UssdService {
     }
 
     String encodedCode = trimmedCode;
-    if (!encodedCode.endsWith('#')) encodedCode += '#';
-    if (!encodedCode.startsWith('*')) encodedCode = '*$encodedCode';
+    
+    // On force le format USSD (*...#) uniquement si le code contient déjà * ou #, 
+    // ou s'il s'agit d'un code court de exactement 3 chiffres (ex: 104 -> *104#).
+    // Les numéros de 4 chiffres ou plus sans * ou # sont traités comme des numéros d'appel (ex: 7373).
+    bool isUssd = encodedCode.contains('*') || encodedCode.contains('#') || encodedCode.length == 3;
+    
+    if (isUssd) {
+      if (!encodedCode.endsWith('#')) encodedCode += '#';
+      if (!encodedCode.startsWith('*')) encodedCode = '*$encodedCode';
+    }
 
     try {
       await Permission.phone.request();
@@ -68,13 +72,9 @@ class UssdService {
       }
 
       if (launched == true) {
-        final displayValue = (encodedCode.length > 8 && encodedCode.contains('*'))
-            ? '${encodedCode.substring(0, encodedCode.lastIndexOf('*') + 1)}...#'
-            : encodedCode;
-
         await _historyService.logEvent(
           title: title ?? 'Opération USSD',
-          description: 'history_ussd_executed|$displayValue',
+          description: 'history_ussd_executed',
           network: network,
           type: HistoryType.ussdLaunch,
         );
