@@ -122,13 +122,6 @@ class SettingsScreen extends StatelessWidget {
             _buildDivider(context),
             _buildSettingTile(
               context: context,
-              icon: Icons.chat_outlined,
-              title: 'contact_whatsapp'.tr(),
-              onTap: _launchWhatsApp,
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
               icon: Icons.star_border,
               title: 'rate'.tr(),
               onTap: () => _showRateDialog(context),
@@ -141,8 +134,83 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => _showShareSheet(context),
             ),
           ]),
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'contact'.tr()),
+          _buildSupportCard(context),
+          
           const SizedBox(height: 40),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSupportCard(BuildContext context) {
+    const whatsappGreen = Color(0xFF25D366);
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [whatsappGreen, whatsappGreen.withValues(alpha: 0.8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: whatsappGreen.withValues(alpha: 0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _launchWhatsApp,
+          borderRadius: BorderRadius.circular(24),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'contact_whatsapp'.tr(),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Assistance directe & feedback',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 18),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
