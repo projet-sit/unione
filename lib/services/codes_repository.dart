@@ -18,7 +18,6 @@ class CodesRepository {
   final ValueNotifier<UssdTree?> catalogue = ValueNotifier(null);
 
   Future<void> initialize() async {
-    final bundled = await _readBundled();
     final prefs = await SharedPreferences.getInstance();
     final cached = prefs.getString(_cacheKey);
     if (cached != null) {
@@ -28,7 +27,7 @@ class CodesRepository {
         await prefs.remove(_cacheKey);
       }
     }
-    catalogue.value ??= bundled;
+    catalogue.value ??= await _readBundled();
     unawaited(refreshInBackground());
   }
 

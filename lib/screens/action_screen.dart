@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/menu_node.dart';
 import '../services/benin_phone.dart';
@@ -121,6 +122,22 @@ class _ActionScreenState extends State<ActionScreen> {
     if (mounted) setState(() => _launching = false);
   }
 
+  Future<void> _report(MenuNode node, OperatorTree operator, UssdTree tree) async {
+    final path = [operator.name, ...tree.breadcrumb(node.id).map((item) => item.label)].join(' › ');
+    final message = '''Bonjour, je souhaite signaler un code qui ne marche plus.
+
+Opérateur : ${operator.name}
+Chemin : $path
+Service : ${node.label}
+Code : ${node.code ?? 'non disponible'}
+Version de l’app : ${const String.fromEnvironment('UNIONE_APP_VERSION', defaultValue: '1.0.0+2')}
+Version du JSON : ${tree.version}''';
+    final uri = Uri.https('wa.me', '/22991831317', {'text': message});
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('WhatsApp n’a pas pu être ouvert.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<UssdTree?>(
     valueListenable: CodesRepository.instance.catalogue,
@@ -167,6 +184,11 @@ class _ActionScreenState extends State<ActionScreen> {
                 icon: _launching ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.phone_forwarded_rounded),
                 label: Text(unavailable ? 'CODE INDISPONIBLE' : node.launchKind == 'call' ? 'APPELER LE SERVICE' : 'LANCER LE CODE'),
               )),
+              TextButton.icon(
+                onPressed: () => _report(node, operator, tree),
+                icon: const Icon(Icons.report_problem_outlined),
+                label: const Text('Signaler un code qui ne marche plus'),
+              ),
             ]),
           ),
         ),
