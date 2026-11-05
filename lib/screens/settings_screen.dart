@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/theme_service.dart';
 import '../widgets/info_bottom_sheet.dart';
 import 'history_screen.dart';
 
@@ -33,11 +34,29 @@ class SettingsScreen extends StatelessWidget {
               icon: Icons.history,
               title: 'history'.tr(),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                );
               },
             ),
+            _buildDivider(context),
+            ListenableBuilder(
+              listenable: themeNotifier,
+              builder: (context, _) => _buildSettingTile(
+                context: context,
+                icon: Icons.palette_outlined,
+                title: 'theme'.tr(),
+                subtitle: switch (themeNotifier.themeMode) {
+                  ThemeMode.light => 'light'.tr(),
+                  ThemeMode.dark => 'dark'.tr(),
+                  ThemeMode.system => 'system'.tr(),
+                },
+                onTap: () => _showThemeDialog(context),
+              ),
+            ),
           ]),
-          
+
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'security_legal'.tr()),
           _buildSettingsCard(context, [
@@ -57,13 +76,31 @@ class SettingsScreen extends StatelessWidget {
                   context: context,
                   builder: (ctx) => AlertDialog(
                     backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-                    title: Text('privacy'.tr(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900)),
-                    content: Text('privacy_content'.tr(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    title: Text(
+                      'privacy'.tr(),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    content: Text(
+                      'privacy_content'.tr(),
+                      style: TextStyle(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.7),
+                      ),
+                    ),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(ctx),
-                        child: Text('ok'.tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text(
+                          'ok'.tr(),
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ],
                   ),
@@ -137,7 +174,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 24),
           _buildSectionTitle(context, 'contact'.tr()),
           _buildSupportCard(context),
-          
+
           const SizedBox(height: 40),
         ],
       ),
@@ -178,7 +215,11 @@ class SettingsScreen extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 28),
+                  child: const Icon(
+                    Icons.chat_bubble_rounded,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 20),
                 Expanded(
@@ -206,10 +247,68 @@ class SettingsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white54, size: 18),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.white54,
+                  size: 18,
+                ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'theme_mode'.tr(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.light_mode_outlined),
+              title: Text('light'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.light
+                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.light);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: Text('dark'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.dark
+                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.dark);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_auto_outlined),
+              title: Text('system'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.system
+                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.system);
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -262,14 +361,22 @@ class SettingsScreen extends StatelessWidget {
               ),
               title: Text(
                 'rate_title'.tr(),
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w900),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'rate_subtitle'.tr(),
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   Row(
@@ -278,7 +385,9 @@ class SettingsScreen extends StatelessWidget {
                       final starNumber = index + 1;
                       return IconButton(
                         icon: Icon(
-                          starNumber <= selectedStars ? Icons.star_rounded : Icons.star_outline_rounded,
+                          starNumber <= selectedStars
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
                           color: Colors.amber,
                           size: 42,
                         ),
@@ -295,7 +404,14 @@ class SettingsScreen extends StatelessWidget {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text('cancel'.tr(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                  child: Text(
+                    'cancel'.tr(),
+                    style: TextStyle(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
@@ -306,7 +422,10 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   onPressed: () => Navigator.pop(context),
-                  child: Text('submit'.tr(), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  child: Text(
+                    'submit'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
                 ),
               ],
             );
@@ -352,9 +471,7 @@ class SettingsScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.05),
-        ),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -363,9 +480,7 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
@@ -399,7 +514,9 @@ class SettingsScreen extends StatelessWidget {
           ? Text(
               subtitle,
               style: TextStyle(
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 13,
               ),
             )

@@ -131,6 +131,7 @@ class _ActionScreenState extends State<ActionScreen> {
       );
       if (approved != true) return;
     }
+    if (!mounted) return;
     setState(() => _launching = true);
     if (node.launchKind == 'call') {
       await UssdService.launchPhoneNumber(context, code, title: node.label, network: operator.name, serviceId: node.id);
@@ -223,7 +224,7 @@ Version du JSON : ${tree.version}''';
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
         child: DropdownButtonFormField<String>(
-          value: parameter.options.contains(_controllers[parameter.key]!.text) ? _controllers[parameter.key]!.text : null,
+          initialValue: parameter.options.contains(_controllers[parameter.key]!.text) ? _controllers[parameter.key]!.text : null,
           decoration: InputDecoration(labelText: parameter.label, border: OutlineInputBorder(borderRadius: BorderRadius.circular(16))),
           items: parameter.options.map((option) => DropdownMenuItem(value: option, child: Text(option))).toList(),
           onChanged: (value) { _controllers[parameter.key]!.text = value ?? ''; setState(() {}); },

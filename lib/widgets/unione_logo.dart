@@ -63,7 +63,7 @@ class UnioneLogoPainter extends CustomPainter {
           Colors.white.withValues(alpha: 0.4),
         ],
       ).createShader(Rect.fromCircle(center: center, radius: radius));
-    
+
     canvas.drawCircle(center, radius, bgPaint);
 
     // Bordure subtile pour donner de la profondeur
@@ -85,10 +85,10 @@ class UnioneLogoPainter extends CustomPainter {
     final uHeight = size.height * 0.35;
     final topY = center.dy - uHeight / 2;
     final bottomY = center.dy + uHeight / 4;
-    
+
     uPath.moveTo(center.dx - uWidth / 2, topY);
     uPath.lineTo(center.dx - uWidth / 2, bottomY);
-    
+
     uPath.arcTo(
       Rect.fromLTWH(
         center.dx - uWidth / 2,
@@ -96,11 +96,11 @@ class UnioneLogoPainter extends CustomPainter {
         uWidth,
         uWidth,
       ),
-      3.14, 
+      3.14,
       -3.14,
       false,
     );
-    
+
     uPath.lineTo(center.dx + uWidth / 2, topY);
 
     canvas.drawPath(uPath, uPaint);
@@ -109,9 +109,17 @@ class UnioneLogoPainter extends CustomPainter {
     final dotPaint = Paint()
       ..color = const Color(0xFF121212)
       ..style = PaintingStyle.fill;
-    
-    canvas.drawCircle(Offset(center.dx - uWidth / 2, topY), size.width * 0.04, dotPaint);
-    canvas.drawCircle(Offset(center.dx + uWidth / 2, topY), size.width * 0.04, dotPaint);
+
+    canvas.drawCircle(
+      Offset(center.dx - uWidth / 2, topY),
+      size.width * 0.04,
+      dotPaint,
+    );
+    canvas.drawCircle(
+      Offset(center.dx + uWidth / 2, topY),
+      size.width * 0.04,
+      dotPaint,
+    );
   }
 
   @override

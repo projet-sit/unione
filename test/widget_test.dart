@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('L\'écran de verrouillage affiche l\'icône d\'empreinte', (WidgetTester tester) async {
+  testWidgets('L\'écran de verrouillage affiche l\'icône d\'empreinte', (
+    WidgetTester tester,
+  ) async {
     // Construit directement le contenu de l'écran de verrouillage en isolation.
     await tester.pumpWidget(
       MaterialApp(

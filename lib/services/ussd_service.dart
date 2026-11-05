@@ -106,8 +106,9 @@ class UssdService {
       // iOS, Android antérieur à 8, permission refusée ou API opérateur indisponible.
       final launched = await _openDialer(encodedCode);
       if (launched) await _logLaunch(title, network, serviceId);
-      if (!launched && context.mounted)
+      if (!launched && context.mounted) {
         _showFailure(context, 'launch_failed'.tr());
+      }
       return launched;
     } catch (e, stack) {
       AuditService.logError('Échec USSD', e, stack);
@@ -246,12 +247,15 @@ class UssdService {
 
   static String _readableError(String error) {
     final normalized = error.toLowerCase();
-    if (normalized.contains('service') || normalized.contains('network'))
+    if (normalized.contains('service') || normalized.contains('network')) {
       return 'Le réseau mobile est indisponible. Réessayez dans quelques instants.';
-    if (normalized.contains('sim') || normalized.contains('subscription'))
+    }
+    if (normalized.contains('sim') || normalized.contains('subscription')) {
       return 'Aucune carte SIM active n’a été trouvée.';
-    if (normalized.contains('cancel') || normalized.contains('reject'))
+    }
+    if (normalized.contains('cancel') || normalized.contains('reject')) {
       return 'Le code USSD a été refusé ou annulé par l’opérateur.';
+    }
     return 'Le code USSD n’a pas pu être exécuté. Le composeur va être ouvert si disponible.';
   }
 

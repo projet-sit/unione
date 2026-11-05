@@ -7,10 +7,13 @@ import 'package:local_session_timeout/local_session_timeout.dart';
 import 'theme/app_theme.dart';
 import 'screens/splash_screen.dart';
 import 'services/security_service.dart';
+import 'services/codes_repository.dart';
+import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await CodesRepository.instance.initialize();
 
   FlutterError.onError = (details) {
     AuditService.logError('Flutter Error', details.exception, details.stack);
@@ -37,19 +40,26 @@ class ZapApp extends StatelessWidget {
       nativeRemoveDelay: 500,
       child: Builder(
         builder: (context) {
-          return MaterialApp(
-            localizationsDelegates: context.localizationDelegates,
-            supportedLocales: context.supportedLocales,
-            locale: const Locale('fr', 'FR'),
-            title: 'UNIONE',
-            debugShowCheckedModeBanner: false,
-            theme: AppTheme.lightTheme,
-            themeMode: ThemeMode.light,
-            home: SecureGate(
-              opacity: 0.9,
-              lockedBuilder: (context, notifier) => _buildLockedScreen(notifier),
-              child: const SplashScreen(),
-            ),
+          return ListenableBuilder(
+            listenable: themeNotifier,
+            builder: (context, _) {
+              return MaterialApp(
+                localizationsDelegates: context.localizationDelegates,
+                supportedLocales: context.supportedLocales,
+                locale: const Locale('fr', 'FR'),
+                title: 'UNIONE',
+                debugShowCheckedModeBanner: false,
+                theme: AppTheme.lightTheme,
+                darkTheme: AppTheme.darkTheme,
+                themeMode: themeNotifier.themeMode,
+                home: SecureGate(
+                  opacity: 0.9,
+                  lockedBuilder: (context, notifier) =>
+                      _buildLockedScreen(notifier),
+                  child: const SplashScreen(),
+                ),
+              );
+            },
           );
         },
       ),

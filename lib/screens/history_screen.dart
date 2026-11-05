@@ -16,7 +16,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   final HistoryService _historyService = HistoryService();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<HistoryItem> _history = [];
   bool _isLoading = true;
   String? _selectedNetwork;
@@ -34,7 +34,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       query: _searchController.text,
       network: _selectedNetwork,
       startDate: _selectedDate,
-      endDate: _selectedDate?.add(const Duration(hours: 23, minutes: 59, seconds: 59)),
+      endDate: _selectedDate?.add(
+        const Duration(hours: 23, minutes: 59, seconds: 59),
+      ),
     );
     setState(() {
       _history = history;
@@ -49,7 +51,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: colorScheme.surface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('clear_history'.tr(), style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w900)),
+        title: Text(
+          'clear_history'.tr(),
+          style: TextStyle(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         content: Text(
           'clear_history_desc'.tr(),
           style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.7)),
@@ -57,7 +65,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('cancel'.tr(), style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.4))),
+            child: Text(
+              'cancel'.tr(),
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -67,7 +80,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 _loadHistory();
               }
             },
-            child: Text('clear_all'.tr(), style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w800)),
+            child: Text(
+              'clear_all'.tr(),
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
         ],
       ),
@@ -83,7 +102,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent),
+            icon: const Icon(
+              Icons.delete_sweep_outlined,
+              color: Colors.redAccent,
+            ),
             onPressed: _confirmClearHistory,
             tooltip: 'clear_all'.tr(),
           ),
@@ -95,10 +117,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _buildFilters(),
           Expanded(
             child: _isLoading
-                ? Center(child: CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary)))
+                ? Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  )
                 : _history.isEmpty
-                    ? _buildEmptyState()
-                    : _buildHistoryList(),
+                ? _buildEmptyState()
+                : _buildHistoryList(),
           ),
         ],
       ),
@@ -113,17 +141,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
         children: [
           TextField(
             controller: _searchController,
-            style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
+            style: TextStyle(
+              color: colorScheme.onSurface,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: InputDecoration(
               hintText: 'search_placeholder'.tr(),
-              hintStyle: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.3)),
-              prefixIcon: Icon(Icons.search_rounded, color: colorScheme.primary),
+              hintStyle: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.3),
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: colorScheme.primary,
+              ),
               filled: true,
               fillColor: colorScheme.surface,
               contentPadding: const EdgeInsets.symmetric(vertical: 16),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+                borderSide: BorderSide(
+                  color: Colors.black.withValues(alpha: 0.05),
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
@@ -137,8 +175,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               Expanded(
                 child: _buildFilterChip(
-                  label: _selectedDate == null 
-                      ? 'all_dates'.tr() 
+                  label: _selectedDate == null
+                      ? 'all_dates'.tr()
                       : DateFormat('dd/MM/yyyy').format(_selectedDate!),
                   icon: Icons.calendar_today_rounded,
                   onTap: () async {
@@ -153,10 +191,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       _loadHistory();
                     }
                   },
-                  onClear: _selectedDate != null ? () {
-                    setState(() => _selectedDate = null);
-                    _loadHistory();
-                  } : null,
+                  onClear: _selectedDate != null
+                      ? () {
+                          setState(() => _selectedDate = null);
+                          _loadHistory();
+                        }
+                      : null,
                 ),
               ),
               const SizedBox(width: 12),
@@ -167,10 +207,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   onTap: () {
                     _showNetworkPicker();
                   },
-                  onClear: _selectedNetwork != null ? () {
-                    setState(() => _selectedNetwork = null);
-                    _loadHistory();
-                  } : null,
+                  onClear: _selectedNetwork != null
+                      ? () {
+                          setState(() => _selectedNetwork = null);
+                          _loadHistory();
+                        }
+                      : null,
                 ),
               ),
             ],
@@ -194,9 +236,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? colorScheme.primary.withValues(alpha: 0.1) : colorScheme.surface,
+          color: isSelected
+              ? colorScheme.primary.withValues(alpha: 0.1)
+              : colorScheme.surface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: isSelected ? colorScheme.primary : Colors.black.withValues(alpha: 0.05)),
+          border: Border.all(
+            color: isSelected
+                ? colorScheme.primary
+                : Colors.black.withValues(alpha: 0.05),
+          ),
         ),
         child: Row(
           children: [
@@ -206,7 +254,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
               child: Text(
                 label,
                 style: TextStyle(
-                  color: isSelected ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.7),
+                  color: isSelected
+                      ? colorScheme.primary
+                      : colorScheme.onSurface.withValues(alpha: 0.7),
                   fontSize: 13,
                   fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                 ),
@@ -216,7 +266,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
             if (onClear != null)
               GestureDetector(
                 onTap: onClear,
-                child: Icon(Icons.close_rounded, size: 16, color: colorScheme.primary),
+                child: Icon(
+                  Icons.close_rounded,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
               ),
           ],
         ),
@@ -229,35 +283,71 @@ class _HistoryScreenState extends State<HistoryScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: colorScheme.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
-            Container(width: 40, height: 4, decoration: BoxDecoration(color: colorScheme.onSurface.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2))),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: colorScheme.onSurface.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             Padding(
               padding: const EdgeInsets.all(24.0),
-              child: Text('select_network_filter'.tr(), style: TextStyle(color: colorScheme.onSurface, fontSize: 20, fontWeight: FontWeight.w900)),
+              child: Text(
+                'select_network_filter'.tr(),
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
             ),
             ListTile(
-              leading: Icon(Icons.grid_view_rounded, color: colorScheme.primary),
-              title: Text('all_networks'.tr(), style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w700)),
+              leading: Icon(
+                Icons.grid_view_rounded,
+                color: colorScheme.primary,
+              ),
+              title: Text(
+                'all_networks'.tr(),
+                style: TextStyle(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               onTap: () {
                 setState(() => _selectedNetwork = null);
                 Navigator.pop(context);
                 _loadHistory();
               },
             ),
-            ...['MTN', 'MOOV', 'CELTIIS'].map((net) => ListTile(
-              leading: Icon(Icons.cell_tower_rounded, color: colorScheme.primary),
-              title: Text(net, style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w700)),
-              onTap: () {
-                setState(() => _selectedNetwork = net);
-                Navigator.pop(context);
-                _loadHistory();
-              },
-            )),
+            ...['MTN', 'MOOV', 'CELTIIS'].map(
+              (net) => ListTile(
+                leading: Icon(
+                  Icons.cell_tower_rounded,
+                  color: colorScheme.primary,
+                ),
+                title: Text(
+                  net,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onTap: () {
+                  setState(() => _selectedNetwork = net);
+                  Navigator.pop(context);
+                  _loadHistory();
+                },
+              ),
+            ),
             const SizedBox(height: 12),
           ],
         ),
@@ -271,19 +361,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
     Map<String, List<HistoryItem>> groupedHistory = {};
     for (var item in _history) {
       final now = DateTime.now();
-      final itemDate = DateTime(item.timestamp.year, item.timestamp.month, item.timestamp.day);
+      final itemDate = DateTime(
+        item.timestamp.year,
+        item.timestamp.month,
+        item.timestamp.day,
+      );
       final today = DateTime(now.year, now.month, now.day);
       final yesterday = today.subtract(const Duration(days: 1));
-      
+
       String header;
       if (itemDate == today) {
         header = "today".tr();
       } else if (itemDate == yesterday) {
         header = "yesterday".tr();
       } else {
-        header = DateFormat('dd MMMM yyyy', context.locale.toString()).format(itemDate);
+        header = DateFormat(
+          'dd MMMM yyyy',
+          context.locale.toString(),
+        ).format(itemDate);
       }
-      
+
       if (!groupedHistory.containsKey(header)) {
         groupedHistory[header] = [];
       }
@@ -296,16 +393,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
       itemBuilder: (context, index) {
         final header = groupedHistory.keys.elementAt(index);
         final items = groupedHistory[header]!;
-        
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: EdgeInsets.only(left: 4, bottom: 16, top: index == 0 ? 0 : 24),
+              padding: EdgeInsets.only(
+                left: 4,
+                bottom: 16,
+                top: index == 0 ? 0 : 24,
+              ),
               child: Text(
                 header.toUpperCase(),
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.6),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.primary.withValues(alpha: 0.6),
                   fontSize: 12,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.5,
@@ -322,75 +425,103 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildHistoryCard(HistoryItem item) {
     final colorScheme = Theme.of(context).colorScheme;
     final typeColor = _getTypeColor(item.type);
-    
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.02),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: typeColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(_getTypeIcon(item.type), color: typeColor, size: 24),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: typeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  _getTypeIcon(item.type),
+                  color: typeColor,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      item.title.tr(),
-                      style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w800, fontSize: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          item.title.tr(),
+                          style: TextStyle(
+                            color: colorScheme.onSurface,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          DateFormat('HH:mm').format(item.timestamp),
+                          style: TextStyle(
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
+                    const SizedBox(height: 6),
                     Text(
-                      DateFormat('HH:mm').format(item.timestamp),
-                      style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 12, fontWeight: FontWeight.w600),
+                      _getLocalizedDescription(item),
+                      style: TextStyle(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
+                    if (item.network != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          item.network!,
+                          style: TextStyle(
+                            color: colorScheme.primary,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  _getLocalizedDescription(item),
-                  style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.6), fontSize: 14, height: 1.4, fontWeight: FontWeight.w500),
-                ),
-                if (item.network != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      item.network!,
-                      style: TextStyle(color: colorScheme.primary, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
-    ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, curve: Curves.easeOut);
+        )
+        .animate()
+        .fadeIn(duration: 400.ms)
+        .slideX(begin: 0.1, curve: Curves.easeOut);
   }
 
   Widget _buildEmptyState() {
@@ -398,11 +529,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.history_toggle_off_rounded, size: 80, color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)),
+          Icon(
+            Icons.history_toggle_off_rounded,
+            size: 80,
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+          ),
           const SizedBox(height: 20),
           Text(
             'no_history'.tr(),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3), fontSize: 18, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.3),
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
@@ -420,21 +561,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
   /// Retourne l'icône correspondante à chaque type d'activité.
   IconData _getTypeIcon(HistoryType type) {
     switch (type) {
-      case HistoryType.networkSelection: return Icons.cell_tower_rounded;
-      case HistoryType.ussdLaunch: return Icons.phone_forwarded_rounded;
-      case HistoryType.search: return Icons.search_rounded;
-      case HistoryType.navigation: return Icons.explore_rounded;
-      default: return Icons.info_outline_rounded;
+      case HistoryType.networkSelection:
+        return Icons.cell_tower_rounded;
+      case HistoryType.ussdLaunch:
+        return Icons.phone_forwarded_rounded;
+      case HistoryType.search:
+        return Icons.search_rounded;
+      case HistoryType.navigation:
+        return Icons.explore_rounded;
+      default:
+        return Icons.info_outline_rounded;
     }
   }
 
   /// Retourne la couleur thématique pour chaque type d'activité.
   Color _getTypeColor(HistoryType type) {
     switch (type) {
-      case HistoryType.ussdLaunch: return Theme.of(context).colorScheme.primary;
-      case HistoryType.networkSelection: return Colors.orangeAccent;
-      case HistoryType.search: return Colors.blueAccent;
-      default: return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
+      case HistoryType.ussdLaunch:
+        return Theme.of(context).colorScheme.primary;
+      case HistoryType.networkSelection:
+        return Colors.orangeAccent;
+      case HistoryType.search:
+        return Colors.blueAccent;
+      default:
+        return Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4);
     }
   }
 }

@@ -7,12 +7,18 @@ class ActionTile extends StatelessWidget {
   final ActionUssd action;
   final Reseau reseau;
   final VoidCallback onTap;
+  final VoidCallback? onToggleFavorite;
+  final VoidCallback? onReport;
+  final bool isFavorite;
 
   const ActionTile({
-    super.key, 
-    required this.action, 
-    required this.reseau, 
-    required this.onTap
+    super.key,
+    required this.action,
+    required this.reseau,
+    required this.onTap,
+    this.onToggleFavorite,
+    this.onReport,
+    this.isFavorite = false,
   });
 
   @override
@@ -35,6 +41,7 @@ class ActionTile extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
+          onLongPress: onToggleFavorite,
           borderRadius: BorderRadius.circular(24),
           splashColor: reseau.couleur.withValues(alpha: 0.1),
           highlightColor: reseau.couleur.withValues(alpha: 0.05),
@@ -43,6 +50,40 @@ class ActionTile extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: onReport,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Icon(
+                          Icons.report_problem_outlined,
+                          color: onSurfaceColor.withValues(alpha: 0.25),
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: onToggleFavorite,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                        padding: const EdgeInsets.all(2),
+                        child: Icon(
+                          isFavorite
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          color: isFavorite
+                              ? Colors.amber
+                              : onSurfaceColor.withValues(alpha: 0.25),
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -50,8 +91,8 @@ class ActionTile extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    action.icone as IconData, 
-                    size: 28, 
+                    action.icone as IconData,
+                    size: 28,
                     color: reseau.couleur,
                   ),
                 ),
@@ -68,6 +109,7 @@ class ActionTile extends StatelessWidget {
                     letterSpacing: -0.2,
                   ),
                 ),
+                const Spacer(),
               ],
             ),
           ),

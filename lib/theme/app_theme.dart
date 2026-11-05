@@ -11,8 +11,12 @@ class AppTheme {
 
   // Couleurs Thème Clair Raffiné (Adouci pour les yeux)
   static const Color lightPrimary = Color(0xFF2563EB); // Royal Blue
-  static const Color lightBackground = Color(0xFFEDF2F7); // Gris très clair (plus doux que F8FAFC)
-  static const Color lightSurface = Color(0xFFF7FAFC); // Blanc cassé (plus doux que pur white)
+  static const Color lightBackground = Color(
+    0xFFEDF2F7,
+  ); // Gris très clair (plus doux que F8FAFC)
+  static const Color lightSurface = Color(
+    0xFFF7FAFC,
+  ); // Blanc cassé (plus doux que pur white)
   static const Color lightTextPrimary = Color(0xFF1A202C); // Gris très sombre
   static const Color lightTextSecondary = Color(0xFF4A5568); // Gris moyen
 
@@ -29,7 +33,7 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: background,
     fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
-    
+
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -43,9 +47,19 @@ class AppTheme {
     ),
 
     textTheme: TextTheme(
-      displayLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w800),
-      titleLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w700, fontSize: 22),
-      bodyLarge: GoogleFonts.plusJakartaSans(color: textPrimary, fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.plusJakartaSans(
+        color: textPrimary,
+        fontWeight: FontWeight.w800,
+      ),
+      titleLarge: GoogleFonts.plusJakartaSans(
+        color: textPrimary,
+        fontWeight: FontWeight.w700,
+        fontSize: 22,
+      ),
+      bodyLarge: GoogleFonts.plusJakartaSans(
+        color: textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
       bodyMedium: GoogleFonts.plusJakartaSans(color: textSecondary),
     ),
 
@@ -72,7 +86,7 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: lightBackground,
     fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
-    
+
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -86,9 +100,19 @@ class AppTheme {
     ),
 
     textTheme: TextTheme(
-      displayLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w800),
-      titleLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w700, fontSize: 22),
-      bodyLarge: GoogleFonts.plusJakartaSans(color: lightTextPrimary, fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.plusJakartaSans(
+        color: lightTextPrimary,
+        fontWeight: FontWeight.w800,
+      ),
+      titleLarge: GoogleFonts.plusJakartaSans(
+        color: lightTextPrimary,
+        fontWeight: FontWeight.w700,
+        fontSize: 22,
+      ),
+      bodyLarge: GoogleFonts.plusJakartaSans(
+        color: lightTextPrimary,
+        fontWeight: FontWeight.w600,
+      ),
       bodyMedium: GoogleFonts.plusJakartaSans(color: lightTextSecondary),
     ),
 
@@ -101,7 +125,7 @@ class AppTheme {
       elevation: 2,
       shadowColor: Color(0xFF0F172A).withValues(alpha: 0.04),
     ),
-    
+
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         elevation: 0,

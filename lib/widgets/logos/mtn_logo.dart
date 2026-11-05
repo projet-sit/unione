@@ -37,7 +37,9 @@ class MtnLogo extends StatelessWidget {
             return Stack(
               alignment: Alignment.center,
               children: [
-                Positioned.fill(child: CustomPaint(painter: _MtnWavesPainter())),
+                Positioned.fill(
+                  child: CustomPaint(painter: _MtnWavesPainter()),
+                ),
                 Text(
                   'MTN',
                   style: TextStyle(

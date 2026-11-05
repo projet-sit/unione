@@ -10,10 +10,7 @@ class AboutScreen extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text('about'.tr()),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: Text('about'.tr()), centerTitle: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -79,16 +76,31 @@ class AboutScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            _buildInfoTile(context, Icons.verified_user_outlined, 'Sécurité', 'Vos données sont protégées localement.'),
+            _buildInfoTile(
+              context,
+              Icons.verified_user_outlined,
+              'Sécurité',
+              'Vos données sont protégées localement.',
+            ),
             const SizedBox(height: 16),
-            _buildInfoTile(context, Icons.speed_outlined, 'Rapidité', 'Exécution instantanée des codes USSD.'),
+            _buildInfoTile(
+              context,
+              Icons.speed_outlined,
+              'Rapidité',
+              'Exécution instantanée des codes USSD.',
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildInfoTile(BuildContext context, IconData icon, String title, String desc) {
+  Widget _buildInfoTile(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String desc,
+  ) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.all(16),
@@ -105,8 +117,21 @@ class AboutScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w800, fontSize: 15)),
-                Text(desc, style: TextStyle(color: colorScheme.onSurface.withValues(alpha: 0.5), fontSize: 13)),
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                ),
+                Text(
+                  desc,
+                  style: TextStyle(
+                    color: colorScheme.onSurface.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
+                ),
               ],
             ),
           ),

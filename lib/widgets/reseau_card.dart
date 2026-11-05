@@ -7,8 +7,8 @@ class ReseauCard extends StatelessWidget {
   final bool isDetected;
 
   const ReseauCard({
-    super.key, 
-    required this.reseau, 
+    super.key,
+    required this.reseau,
     required this.onTap,
     this.isDetected = false,
   });
@@ -83,7 +83,10 @@ class ReseauCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: reseau.couleur.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
@@ -105,7 +108,8 @@ class ReseauCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest
+                        .withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

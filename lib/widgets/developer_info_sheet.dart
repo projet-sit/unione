@@ -24,9 +24,12 @@ class DeveloperInfoSheet extends StatelessWidget {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 8.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -38,7 +41,11 @@ class DeveloperInfoSheet extends StatelessWidget {
                         color: const Color(0xFF00AEEF).withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.person, color: Color(0xFF00AEEF), size: 32),
+                      child: const Icon(
+                        Icons.person,
+                        color: Color(0xFF00AEEF),
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     const Expanded(
@@ -67,9 +74,9 @@ class DeveloperInfoSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 const Text(
                   "Je suis Ulrich IDOHOU, développeur Flutter basé à Abomey-Calavi, Bénin. Passionné par la création d'outils utiles et accessibles pour le quotidien africain, je développe des applications centrées sur l'expérience utilisateur locale.",
                   style: TextStyle(
@@ -78,14 +85,18 @@ class DeveloperInfoSheet extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                
+
                 const SizedBox(height: 20),
                 const Divider(color: Colors.white10),
                 const SizedBox(height: 20),
-                
+
                 Row(
                   children: [
-                    const Icon(Icons.info_outline, color: Colors.white54, size: 20),
+                    const Icon(
+                      Icons.info_outline,
+                      color: Colors.white54,
+                      size: 20,
+                    ),
                     const SizedBox(width: 12),
                     const Text(
                       'À propos de UNIONE',
@@ -106,7 +117,7 @@ class DeveloperInfoSheet extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
-                
+
                 const SizedBox(height: 32),
               ],
             ),

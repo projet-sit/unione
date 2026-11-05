@@ -61,8 +61,9 @@ class CodesRepository {
 
   UssdTree _decodeAndValidate(String raw) {
     final decoded = jsonDecode(raw);
-    if (decoded is! Map<String, dynamic>)
+    if (decoded is! Map<String, dynamic>) {
       throw const FormatException('JSON USSD invalide.');
+    }
     return UssdTree.fromJson(decoded);
   }
 }
