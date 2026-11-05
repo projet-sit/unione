@@ -1,11 +1,4 @@
-
-enum HistoryType {
-  networkSelection,
-  ussdLaunch,
-  search,
-  navigation,
-  other
-}
+enum HistoryType { networkSelection, ussdLaunch, search, navigation, other }
 
 class HistoryItem {
   final int? id;
@@ -13,6 +6,7 @@ class HistoryItem {
   final String description;
   final DateTime timestamp;
   final String? network;
+  final String? serviceId;
   final HistoryType type;
 
   HistoryItem({
@@ -21,6 +15,7 @@ class HistoryItem {
     required this.description,
     required this.timestamp,
     this.network,
+    this.serviceId,
     required this.type,
   });
 
@@ -31,6 +26,7 @@ class HistoryItem {
       'description': description,
       'timestamp': timestamp.toIso8601String(),
       'network': network,
+      'service_id': serviceId,
       'type': type.index,
     };
   }
@@ -42,6 +38,7 @@ class HistoryItem {
       description: map['description'],
       timestamp: DateTime.parse(map['timestamp']),
       network: map['network'],
+      serviceId: map['service_id'] as String?,
       type: HistoryType.values[map['type']],
     );
   }

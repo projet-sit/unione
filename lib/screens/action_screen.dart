@@ -6,6 +6,7 @@ import '../models/menu_node.dart';
 import '../services/benin_phone.dart';
 import '../services/codes_repository.dart';
 import '../services/ussd_service.dart';
+import '../services/user_preferences_service.dart';
 import 'menu_screen.dart';
 import 'selection_reseau_screen.dart';
 
@@ -21,6 +22,23 @@ class ActionScreen extends StatefulWidget {
 class _ActionScreenState extends State<ActionScreen> {
   final Map<String, TextEditingController> _controllers = {};
   bool _launching = false;
+  bool _favorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorite();
+  }
+
+  Future<void> _loadFavorite() async {
+    final favorites = await UserPreferencesService.instance.favorites();
+    if (mounted) setState(() => _favorite = favorites.contains(widget.nodeId));
+  }
+
+  Future<void> _toggleFavorite() async {
+    final added = await UserPreferencesService.instance.toggleFavorite(widget.nodeId);
+    if (mounted) setState(() => _favorite = added);
+  }
 
   @override
   void dispose() {
@@ -115,9 +133,9 @@ class _ActionScreenState extends State<ActionScreen> {
     }
     setState(() => _launching = true);
     if (node.launchKind == 'call') {
-      await UssdService.launchPhoneNumber(context, code, title: node.label, network: operator.name);
+      await UssdService.launchPhoneNumber(context, code, title: node.label, network: operator.name, serviceId: node.id);
     } else {
-      await UssdService.launchUssd(context, code, title: node.label, network: operator.name, operatorId: operator.id);
+      await UssdService.launchUssd(context, code, title: node.label, network: operator.name, operatorId: operator.id, serviceId: node.id);
     }
     if (mounted) setState(() => _launching = false);
   }
@@ -155,7 +173,10 @@ Version du JSON : ${tree.version}''';
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Détail du service'), centerTitle: true,
-          actions: [IconButton(tooltip: 'Accueil', icon: const Icon(Icons.home_outlined), onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const SelectionReseauScreen()), (route) => false))],
+          actions: [
+            IconButton(tooltip: _favorite ? 'Retirer des favoris' : 'Ajouter aux favoris', icon: Icon(_favorite ? Icons.star_rounded : Icons.star_outline_rounded, color: _favorite ? Colors.amber : null), onPressed: _toggleFavorite),
+            IconButton(tooltip: 'Accueil', icon: const Icon(Icons.home_outlined), onPressed: () => Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const SelectionReseauScreen()), (route) => false)),
+          ],
         ),
         body: SafeArea(
           child: Padding(

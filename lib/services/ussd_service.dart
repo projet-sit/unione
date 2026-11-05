@@ -40,6 +40,7 @@ class UssdService {
     String? title,
     String? network,
     String? operatorId,
+    String? serviceId,
   }) async {
     final trimmedCode = code.trim();
 
@@ -67,7 +68,7 @@ class UssdService {
       // iOS ne donne pas accès à la réponse USSD : on ouvre directement le composeur.
       if (!Platform.isAndroid) {
         final launched = await _openDialer(encodedCode);
-        if (launched) await _logLaunch(title, network);
+        if (launched) await _logLaunch(title, network, serviceId);
         if (!launched && context.mounted) _showFailure(context, 'launch_failed'.tr());
         return launched;
       }
@@ -89,7 +90,7 @@ class UssdService {
               sim.subscriptionId,
             );
           }
-          await _logLaunch(title, network);
+          await _logLaunch(title, network, serviceId);
           if (context.mounted &&
               result!.response != null &&
               result.response!.trim().isNotEmpty) {
@@ -104,7 +105,7 @@ class UssdService {
 
       // iOS, Android antérieur à 8, permission refusée ou API opérateur indisponible.
       final launched = await _openDialer(encodedCode);
-      if (launched) await _logLaunch(title, network);
+      if (launched) await _logLaunch(title, network, serviceId);
       if (!launched && context.mounted)
         _showFailure(context, 'launch_failed'.tr());
       return launched;
@@ -124,18 +125,20 @@ class UssdService {
     String number, {
     String? title,
     String? network,
+    String? serviceId,
   }) async {
     final launched = await _openDialer(number.trim());
-    if (launched) await _logLaunch(title, network);
+    if (launched) await _logLaunch(title, network, serviceId);
     if (!launched && context.mounted) _showFailure(context, 'launch_failed'.tr());
     return launched;
   }
 
-  static Future<void> _logLaunch(String? title, String? network) =>
+  static Future<void> _logLaunch(String? title, String? network, String? serviceId) =>
       _historyService.logEvent(
         title: title ?? 'Opération USSD',
         description: 'history_ussd_executed',
         network: network,
+        serviceId: serviceId,
         type: HistoryType.ussdLaunch,
       );
 

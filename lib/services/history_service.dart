@@ -27,21 +27,23 @@ class HistoryService {
     String path = join(await getDatabasesPath(), 'unione_history.db');
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: (db, version) {
         // Création de la table 'history' lors du premier lancement.
-        return db.execute(
-          '''
+        return db.execute('''
           CREATE TABLE history(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT,
             description TEXT,
             timestamp TEXT,
             network TEXT,
+            service_id TEXT,
             type INTEGER
           )
-          ''',
-        );
+          ''');
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) await db.execute('ALTER TABLE history ADD COLUMN service_id TEXT');
       },
     );
   }
@@ -55,6 +57,7 @@ class HistoryService {
     required String title,
     required String description,
     String? network,
+    String? serviceId,
     required HistoryType type,
   }) async {
     final db = await database;
@@ -63,6 +66,7 @@ class HistoryService {
       description: description,
       timestamp: DateTime.now(),
       network: network,
+      serviceId: serviceId,
       type: type,
     );
     // Insertion de l'entrée dans la base de données.
@@ -82,7 +86,7 @@ class HistoryService {
     DateTime? endDate,
   }) async {
     final db = await database;
-    
+
     String whereClause = '';
     List<dynamic> whereArgs = [];
 
