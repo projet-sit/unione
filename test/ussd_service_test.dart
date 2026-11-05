@@ -42,6 +42,22 @@ void main() {
 
       expect(code, isEmpty);
     });
+
+    test('rejette les templates contenant "pin"', () {
+      final code = UssdService.buildFromTemplate(
+        template: '*136*{pin}#',
+        data: {'pin': '1234'},
+      );
+      expect(code, isEmpty);
+    });
+
+    test('rejette les templates dont les clés data contiennent "pin"', () {
+      final code = UssdService.buildFromTemplate(
+        template: '*136*{secret}#',
+        data: {'secret': '1234', 'code_pin': '0000'},
+      );
+      expect(code, isEmpty);
+    });
   });
 
   group('BeninPhone.normalize', () {
@@ -50,5 +66,30 @@ void main() {
       expect(BeninPhone.normalize('+229 01 97 00 00 00', '8'), '97000000');
       expect(BeninPhone.normalize('00229 01 97 00 00 00', '229+8'), '22997000000');
     });
+
+    test('retourne null pour une chaîne vide', () {
+      expect(BeninPhone.normalize('', '8'), isNull);
+    });
+
+    test('retourne null pour un numéro non béninois (7 chiffres)', () {
+      expect(BeninPhone.normalize('1234567', '8'), isNull);
+    });
+
+    test('retourne null pour un format inconnu', () {
+      expect(BeninPhone.normalize('97000000', 'unknown'), isNull);
+    });
+
+    test('format "8" avec saisie 10 chiffres (préfixe 01)', () {
+      expect(BeninPhone.normalize('0197000000', '8'), '97000000');
+    });
+
+    test('format "10" avec 8 chiffres en entrée', () {
+      expect(BeninPhone.normalize('97000000', '10'), '0197000000');
+    });
+
+    test('format "229+8" avec 8 chiffres en entrée', () {
+      expect(BeninPhone.normalize('97000000', '229+8'), '22997000000');
+    });
   });
 }
+
