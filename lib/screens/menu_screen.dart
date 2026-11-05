@@ -11,24 +11,33 @@ import 'action_screen.dart';
 import 'selection_reseau_screen.dart';
 
 /// Affiche n'importe quel nœud de type menu du catalogue JSON.
-class MenuScreen extends StatelessWidget {
+class MenuScreen extends StatefulWidget {
   final String nodeId;
   const MenuScreen({super.key, required this.nodeId});
+
+  @override
+  State<MenuScreen> createState() => _MenuScreenState();
+}
+
+class _MenuScreenState extends State<MenuScreen> {
+  String? _category;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<UssdTree?>(
     valueListenable: CodesRepository.instance.catalogue,
     builder: (context, tree, _) {
-      final isOperatorRoot = nodeId.startsWith('operator:');
-      final node = isOperatorRoot ? null : tree?.node(nodeId);
+      final isOperatorRoot = widget.nodeId.startsWith('operator:');
+      final node = isOperatorRoot ? null : tree?.node(widget.nodeId);
       final operator = isOperatorRoot
-          ? tree?.operators.where((item) => item.id == nodeId.substring('operator:'.length)).firstOrNull
-          : tree?.operatorFor(nodeId);
+          ? tree?.operators.where((item) => item.id == widget.nodeId.substring('operator:'.length)).firstOrNull
+          : tree?.operatorFor(widget.nodeId);
       if (operator == null || (!isOperatorRoot && (node == null || node.type != MenuNodeType.menu))) {
         return const Scaffold(body: Center(child: Text('Ce menu n’est plus disponible.')));
       }
       final children = isOperatorRoot ? operator.children : node!.children;
       final title = isOperatorRoot ? 'Services disponibles' : node!.label;
+      final categories = children.map((child) => child.category).whereType<String>().toSet().toList()..sort();
+      final visibleChildren = _category == null ? children : children.where((child) => child.category == _category).toList();
       return Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
@@ -50,7 +59,7 @@ class MenuScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _Breadcrumb(tree: tree!, nodeId: nodeId, operator: operator),
+              _Breadcrumb(tree: tree!, nodeId: widget.nodeId, operator: operator),
               const SizedBox(height: 14),
               Text(
                 title,
@@ -65,6 +74,20 @@ class MenuScreen extends StatelessWidget {
                 'Choisissez un service',
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .58)),
               ),
+              if (categories.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(children: [
+                    ChoiceChip(label: const Text('Tous'), selected: _category == null, onSelected: (_) => setState(() => _category = null)),
+                    const SizedBox(width: 8),
+                    ...categories.map((category) => Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(label: Text(_categoryName(category)), selected: _category == category, onSelected: (_) => setState(() => _category = category)),
+                    )),
+                  ]),
+                ),
+              ],
               const SizedBox(height: 22),
               Expanded(
                 child: GridView.builder(
@@ -74,13 +97,13 @@ class MenuScreen extends StatelessWidget {
                     crossAxisSpacing: 20,
                     childAspectRatio: 1,
                   ),
-                  itemCount: children.length,
+                  itemCount: visibleChildren.length,
                   itemBuilder: (context, index) => _NodeCard(
-                    node: children[index],
+                    node: visibleChildren[index],
                     color: operator.color,
                     onTap: () {
                       HapticFeedback.selectionClick();
-                      final child = children[index];
+                      final child = visibleChildren[index];
                       Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -99,6 +122,16 @@ class MenuScreen extends StatelessWidget {
       );
     },
   );
+
+  String _categoryName(String category) => switch (category) {
+    'solde' => 'Solde',
+    'mobile_money' => 'Mobile money',
+    'forfaits' => 'Forfaits',
+    'credit' => 'Crédit',
+    'compte' => 'Compte',
+    'fidelite' => 'Fidélité',
+    _ => category.isEmpty ? 'Autres' : '${category[0].toUpperCase()}${category.substring(1)}',
+  };
 }
 
 class _Breadcrumb extends StatelessWidget {
