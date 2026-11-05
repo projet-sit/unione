@@ -13,7 +13,7 @@
   "security": "Sécurité",
   "about": "À propos de UNIONE",
   "privacy": "Politique de confidentialité",
-  "privacy_content": "UNIONE ne collecte aucune donnée personnelle sensible. Vos transactions sont sécurisées localement.",
+  "privacy_content": "UNIONE ne collecte aucune donnée personnelle sensible. L’autorisation Téléphone sert uniquement à lancer un code USSD et à choisir une SIM ; l’autorisation Contacts, facultative, sert uniquement à sélectionner un numéro. Les numéros, montants et codes PIN ne sont jamais enregistrés dans l’historique. Le catalogue de codes peut être téléchargé depuis une source HTTPS et conservé localement pour fonctionner hors ligne.",
   "terms": "Conditions d'utilisation",
   "contact": "Contact et assistance",
   "contact_whatsapp": "Nous contacter sur WhatsApp",
