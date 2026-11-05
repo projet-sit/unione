@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/history_item.dart';
@@ -24,6 +25,7 @@ class SelectionReseauScreen extends StatefulWidget {
 class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   final _history = HistoryService();
   final _search = TextEditingController();
+  Timer? _debounce;
   Set<String> _favorites = {};
   List<HistoryItem> _recent = [];
   String? _detectedOperator;
@@ -31,12 +33,23 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   @override
   void initState() {
     super.initState();
-    _search.addListener(() => setState(() {}));
+    _search.addListener(_onSearchChanged);
     _loadPersonalization();
   }
 
+  void _onSearchChanged() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() {});
+    });
+  }
+
   @override
-  void dispose() { _search.dispose(); super.dispose(); }
+  void dispose() {
+    _debounce?.cancel();
+    _search.dispose();
+    super.dispose();
+  }
 
   Future<void> _loadPersonalization() async {
     final favorites = await UserPreferencesService.instance.favorites();

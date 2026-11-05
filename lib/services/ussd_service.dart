@@ -15,6 +15,11 @@ class UssdService {
   static final HistoryService _historyService = HistoryService();
   static final AndroidUssdGateway _gateway = AndroidUssdGateway();
 
+  /// Vérifie qu'un code USSD bien formé : commence par `*`, finit par `#`,
+  /// ne contient que des chiffres, `*` et `#`.
+  /// Protège contre l'injection de codes provenant d'un JSON compromis.
+  static final RegExp _ussdPattern = RegExp(r'^\*[\d*#]+#$');
+
   static Future<bool> verifyIdentity() async {
     try {
       final bool canAuthenticateWithBiometrics = await _auth.canCheckBiometrics;
@@ -62,6 +67,13 @@ class UssdService {
     if (isUssd) {
       if (!encodedCode.endsWith('#')) encodedCode += '#';
       if (!encodedCode.startsWith('*')) encodedCode = '*$encodedCode';
+
+      // Validation de sécurité : rejette les codes USSD malformés.
+      if (!_ussdPattern.hasMatch(encodedCode)) {
+        AuditService.logError('Code USSD invalide rejeté', encodedCode);
+        if (context.mounted) _showFailure(context, 'invalid_ussd'.tr());
+        return false;
+      }
     }
 
     try {
