@@ -256,12 +256,17 @@ class UssdService {
     required String template,
     required Map<String, String> data,
   }) {
+    if (RegExp(r'\{[^}]*pin[^}]*\}', caseSensitive: false).hasMatch(template) ||
+        data.keys.any((key) => key.toLowerCase().contains('pin'))) {
+      return '';
+    }
     String finalCode = template;
     data.forEach((key, value) {
       finalCode = finalCode.replaceAll('{{$key}}', value.trim());
+      finalCode = finalCode.replaceAll('{$key}', value.trim());
     });
     finalCode = finalCode.replaceAll(RegExp(r'\s+'), '');
-    if (finalCode.contains('{{')) return '';
+    if (finalCode.contains('{{') || RegExp(r'\{[^}]+\}').hasMatch(finalCode)) return '';
     return finalCode;
   }
 
