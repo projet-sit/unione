@@ -1,6 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/responsive_layout.dart';
+
 /// Aide statique : questions fréquentes, sans dépendance réseau.
 class HelpScreen extends StatelessWidget {
   const HelpScreen({super.key});
@@ -74,9 +76,10 @@ class HelpScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-        itemCount: _faq.length,
+      body: SafePage(
+        child: ListView.separated(
+          padding: EdgeInsets.zero,
+          itemCount: _faq.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final item = _faq[index];
@@ -125,6 +128,7 @@ class HelpScreen extends StatelessWidget {
             ),
           );
         },
+        ),
       ),
     );
   }

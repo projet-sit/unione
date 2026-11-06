@@ -16,6 +16,7 @@ import '../widgets/app_logo.dart';
 import '../widgets/operation_menu_sheet.dart';
 import '../widgets/operator_logo.dart';
 import '../widgets/reseau_card.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
 import 'catalog_screen.dart';
@@ -107,11 +108,11 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
       valueListenable: CodesRepository.instance.catalogue,
       builder: (context, tree, _) {
         if (tree == null) {
-          return Scaffold(body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 20, 24, 36), children: [
+          return Scaffold(body: SafePage(child: ListView(children: [
             _header(), const SizedBox(height: 28),
             const SkeletonBox(height: 52, borderRadius: 18),
             const SizedBox(height: 28),
-            const SkeletonBox(height: 20, width: 180, borderRadius: 6),
+            const SkeletonBox(height: 20, borderRadius: 6),
             const SizedBox(height: 20),
             const SkeletonReseauCard(),
             const SkeletonReseauCard(),
@@ -161,7 +162,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
 
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 20, 24, 36), children: [
+              body: SafePage(child: ListView(children: [
                 _header(), const SizedBox(height: 28),
                 TextField(
                   controller: _search,

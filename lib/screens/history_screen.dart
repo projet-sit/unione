@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/history_item.dart';
 import '../services/history_service.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/skeleton_loader.dart';
 
 /// Écran affichant l'historique complet des actions de l'utilisateur.
@@ -146,17 +147,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: Column(
-        children: [
-          _buildFilters(),
-          Expanded(
-            child: _isLoading
-                ? _buildSkeletonList()
-                : _history.isEmpty
-                ? _buildEmptyState()
-                : _buildHistoryList(),
-          ),
-        ],
+      body: SafePage(
+        child: Column(
+          children: [
+            _buildFilters(),
+            Expanded(
+              child: _isLoading
+                  ? _buildSkeletonList()
+                  : _history.isEmpty
+                  ? _buildEmptyState()
+                  : _buildHistoryList(),
+            ),
+          ],
+        ),
       ),
     );
   }

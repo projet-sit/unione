@@ -7,6 +7,7 @@ import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
 import '../services/whatsapp_launcher.dart';
 import '../widgets/operator_logo.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
 import 'selection_reseau_screen.dart';
@@ -197,9 +198,10 @@ class _CatalogScreenState extends State<CatalogScreen>
                       )
                     : null,
               ),
-              body: activeTabs.isEmpty
-                  ? _buildEmptyOffers(context)
-                  : TabBarView(
+              body: SafePage(
+                child: activeTabs.isEmpty
+                    ? _buildEmptyOffers(context)
+                    : TabBarView(
                       controller: _tabController,
                       children: activeTabs.map((tab) {
                         final tabOffers =
@@ -317,6 +319,7 @@ class _CatalogScreenState extends State<CatalogScreen>
                         );
                       }).toList(),
                     ),
+              ),
             );
           },
         );

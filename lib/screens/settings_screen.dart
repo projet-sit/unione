@@ -6,6 +6,7 @@ import '../services/device_info_service.dart';
 import '../services/theme_service.dart';
 import '../services/whatsapp_launcher.dart';
 import '../widgets/info_bottom_sheet.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/share_sheet.dart';
 import 'help_screen.dart';
 import 'history_screen.dart';
@@ -48,9 +49,10 @@ class SettingsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        children: [
+      body: SafePage(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
           _buildSectionTitle(context, 'general'.tr()),
           _buildSettingsCard(context, [
             _buildSettingTile(
@@ -244,6 +246,7 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 40),
         ],
+        ),
       ),
     );
   }

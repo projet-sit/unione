@@ -6,6 +6,7 @@ import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/operation_menu_sheet.dart';
 import '../widgets/operator_logo.dart';
+import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
 import 'catalog_screen.dart';
 import 'selection_reseau_screen.dart';
@@ -54,8 +55,7 @@ class _MenuScreenState extends State<MenuScreen> {
             ),
           ],
         ),
-        body: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+        body: SafePage(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -63,6 +63,8 @@ class _MenuScreenState extends State<MenuScreen> {
               const SizedBox(height: 14),
               Text(
                 title,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
@@ -72,6 +74,8 @@ class _MenuScreenState extends State<MenuScreen> {
               const SizedBox(height: 5),
               Text(
                 'Choisissez un service',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .58)),
               ),
               if (categories.isNotEmpty) ...[
@@ -90,16 +94,8 @@ class _MenuScreenState extends State<MenuScreen> {
               ],
               const SizedBox(height: 22),
               Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 20,
-                    crossAxisSpacing: 20,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: visibleChildren.length,
-                  itemBuilder: (context, index) {
-                    final child = visibleChildren[index];
+                child: ResponsiveGrid(
+                  children: visibleChildren.map((child) {
                     return _NodeCard(
                       node: child,
                       color: OperatorLogo.accent(context, operator.color),
@@ -145,7 +141,7 @@ class _MenuScreenState extends State<MenuScreen> {
                               );
                             },
                     );
-                  },
+                  }).toList(),
                 ),
               ),
             ],
