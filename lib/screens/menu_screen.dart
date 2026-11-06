@@ -4,10 +4,8 @@ import 'package:flutter/services.dart';
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
-import '../widgets/logos/celtiis_logo.dart';
-import '../widgets/logos/moov_logo.dart';
-import '../widgets/logos/mtn_logo.dart';
 import '../widgets/operation_menu_sheet.dart';
+import '../widgets/operator_logo.dart';
 import '../widgets/service_launcher.dart';
 import 'catalog_screen.dart';
 import 'selection_reseau_screen.dart';
@@ -259,9 +257,5 @@ IconData _iconFor(String icon) => switch (icon) {
   _ => Icons.dialpad_rounded,
 };
 
-Widget _operatorLogo(String id) => switch (id) {
-  'mtn' => const MtnLogo(size: 32),
-  'moov' => const MoovLogo(size: 32),
-  'celtiis' => const CeltiisLogo(size: 32),
-  _ => const Icon(Icons.cell_tower_rounded),
-};
+Widget _operatorLogo(String id) =>
+    OperatorLogo(operatorId: id, size: 32, borderRadius: 10);

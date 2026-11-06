@@ -60,20 +60,12 @@ class ReseauCard extends StatelessWidget {
                       width: 72,
                       height: 72,
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            reseau.couleur.withValues(alpha: 0.15),
-                            reseau.couleur.withValues(alpha: 0.05),
-                          ],
-                        ),
                         borderRadius: BorderRadius.circular(22),
                       ),
                       child: Center(
                         child: Hero(
                           tag: 'logo_${reseau.nom}',
-                          child: reseau.logo(size: 38),
+                          child: reseau.logo(size: 72, borderRadius: 22),
                         ),
                       ),
                     ),

@@ -5,6 +5,7 @@ import '../models/catalog_model.dart';
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
+import '../widgets/operator_logo.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
 import 'selection_reseau_screen.dart';
@@ -137,13 +138,26 @@ Version de l’app : 1.0.0+2''';
                   tooltip: 'Retour',
                   onPressed: () => Navigator.of(context).pop(),
                 ),
-                title: Text(
-                  widget.title ?? catalog.label,
-                  style: TextStyle(
-                    color: headerFgColor,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                  ),
+                title: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    OperatorLogo(
+                      operatorId: operator.id,
+                      size: 26,
+                      borderRadius: 8,
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        widget.title ?? catalog.label,
+                        style: TextStyle(
+                          color: headerFgColor,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 centerTitle: true,
                 actions: [

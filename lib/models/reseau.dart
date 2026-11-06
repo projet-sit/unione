@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/logos/celtiis_logo.dart';
-import '../widgets/logos/moov_logo.dart';
-import '../widgets/logos/mtn_logo.dart';
+import '../widgets/operator_logo.dart';
 
 enum ReseauType { mtn, moov, celtiis }
 
@@ -20,14 +18,11 @@ class Reseau {
 }
 
 extension ReseauLogo on Reseau {
-  Widget logo({double size = 44}) {
-    switch (type) {
-      case ReseauType.mtn:
-        return MtnLogo(size: size);
-      case ReseauType.moov:
-        return MoovLogo(size: size);
-      case ReseauType.celtiis:
-        return CeltiisLogo(size: size);
-    }
+  Widget logo({double size = 44, double? borderRadius}) {
+    return OperatorLogo(
+      operatorId: type.name,
+      size: size,
+      borderRadius: borderRadius,
+    );
   }
 }

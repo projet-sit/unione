@@ -15,6 +15,7 @@ import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/operation_menu_sheet.dart';
+import '../widgets/operator_logo.dart';
 import '../widgets/reseau_card.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
@@ -40,6 +41,12 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     super.initState();
     _search.addListener(_onSearchChanged);
     _loadPersonalization();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final path in OperatorLogo.availableAssets) {
+        precacheImage(AssetImage(path), context);
+      }
+    });
   }
 
   void _onSearchChanged() {
@@ -248,10 +255,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                   result ? _favorites.add(node.id) : _favorites.remove(node.id);
                 });
               },
-              leading: CircleAvatar(
-                backgroundColor: operator.color.withValues(alpha: .12),
-                child: Icon(menuIconFor(node.icon), color: operator.color),
-              ),
+              leading: OperatorLogo(operatorId: operator.id, size: 40, borderRadius: 10),
               title: Text(node.label, style: const TextStyle(fontWeight: FontWeight.w800)),
               subtitle: Text(subtitle),
               trailing: isCatalog
@@ -290,10 +294,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
             child: Card(
               child: ListTile(
                 onTap: () => _openOffer(match.catalog, match.offer, match.operator),
-                leading: CircleAvatar(
-                  backgroundColor: match.operator.color.withValues(alpha: .15),
-                  child: Icon(Icons.shopping_bag_outlined, color: match.operator.color),
-                ),
+                leading: OperatorLogo(operatorId: match.operator.id, size: 40, borderRadius: 10),
                 title: Text(
                   title,
                   style: const TextStyle(fontWeight: FontWeight.w800),
