@@ -44,10 +44,15 @@ remplace jamais le cache utilisable.
 
 - `shared_preferences` : conserve localement le catalogue validé, les favoris et le
   dernier choix de SIM par opérateur. Aucune donnée de saisie ni code PIN n’y est stocké.
+- `share_plus` : ouvre la feuille de partage native (WhatsApp, SMS, Telegram…).
 
 Les paquets déjà présents `permission_handler`, `flutter_contacts` et `url_launcher`
 servent respectivement aux autorisations Android, au choix facultatif d’un contact et
-au repli vers le composeur/WhatsApp.
+à la redirection WhatsApp (repli navigateur si l’application n’est pas installée).
+
+Le numéro WhatsApp et le lien de partage sont centralisés dans
+[`lib/config/app_config.dart`](lib/config/app_config.dart). Le lien public se fournit
+au build : `--dart-define=UNIONE_SHARE_URL=https://...`.
 
 ## Test sur téléphone réel
 

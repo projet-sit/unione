@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../config/app_config.dart';
 import '../models/catalog_model.dart';
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
+import '../services/whatsapp_launcher.dart';
 import '../widgets/operator_logo.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
@@ -14,17 +15,14 @@ class CatalogScreen extends StatefulWidget {
   final String catalogId;
   final String? title;
 
-  const CatalogScreen({
-    super.key,
-    required this.catalogId,
-    this.title,
-  });
+  const CatalogScreen({super.key, required this.catalogId, this.title});
 
   @override
   State<CatalogScreen> createState() => _CatalogScreenState();
 }
 
-class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProviderStateMixin {
+class _CatalogScreenState extends State<CatalogScreen>
+    with SingleTickerProviderStateMixin {
   TabController? _tabController;
   int _selectedTabIndex = 0;
 
@@ -65,20 +63,14 @@ class _CatalogScreenState extends State<CatalogScreen> with SingleTickerProvider
     required String catalogLabel,
     required String? verifiedAt,
   }) async {
-    final message = '''Bonjour, je souhaite signaler un tarif incorrect ou obsolète sur UNIONE.
-
-Opérateur : $operatorName
-Catalogue : $catalogLabel
-Dernière mise à jour affichée : ${verifiedAt ?? 'inconnue'}
-Version de l’app : 1.0.0+2''';
-
-    final uri = Uri.https('wa.me', '/22991831317', {'text': message});
-    final messenger = ScaffoldMessenger.of(context);
-    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('WhatsApp n’a pas pu être ouvert.')),
-      );
-    }
+    await WhatsAppLauncher.openWithFeedback(
+      context,
+      message: AppConfig.reportCatalogMessage(
+        operatorName: operatorName,
+        catalogLabel: catalogLabel,
+        verifiedAt: verifiedAt,
+      ),
+    );
   }
 
   @override
@@ -96,7 +88,10 @@ Version de l’app : 1.0.0+2''';
             }
 
             if (catalog == null) {
-              return _buildEmptyScaffold(context, 'Ce catalogue de forfaits est indisponible.');
+              return _buildEmptyScaffold(
+                context,
+                'Ce catalogue de forfaits est indisponible.',
+              );
             }
 
             final operator = tree.operators.firstWhere(
@@ -120,8 +115,12 @@ Version de l’app : 1.0.0+2''';
 
             final operatorColor = operator.color;
             final isMtn = operator.id.toLowerCase() == 'mtn';
-            final headerFgColor = isMtn ? const Color(0xFF1A1A1A) : Colors.white;
-            final accentIndicatorColor = isMtn ? const Color(0xFF1A1A1A) : Colors.white;
+            final headerFgColor = isMtn
+                ? const Color(0xFF1A1A1A)
+                : Colors.white;
+            final accentIndicatorColor = isMtn
+                ? const Color(0xFF1A1A1A)
+                : Colors.white;
 
             final isOutdated = _isOutdated(catalog.verifiedAt);
             final bestOfferId = catalog.bestValueOfferId;
@@ -165,7 +164,9 @@ Version de l’app : 1.0.0+2''';
                     icon: Icon(Icons.close, color: headerFgColor),
                     tooltip: 'Fermer',
                     onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => const SelectionReseauScreen()),
+                      MaterialPageRoute(
+                        builder: (_) => const SelectionReseauScreen(),
+                      ),
                       (route) => false,
                     ),
                   ),
@@ -178,10 +179,21 @@ Version de l’app : 1.0.0+2''';
                         indicatorColor: accentIndicatorColor,
                         indicatorWeight: 3,
                         labelColor: headerFgColor,
-                        unselectedLabelColor: headerFgColor.withValues(alpha: 0.65),
-                        labelStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.5),
-                        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                        tabs: activeTabs.map((t) => Tab(text: t.label.toUpperCase())).toList(),
+                        unselectedLabelColor: headerFgColor.withValues(
+                          alpha: 0.65,
+                        ),
+                        labelStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
+                        unselectedLabelStyle: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                        tabs: activeTabs
+                            .map((t) => Tab(text: t.label.toUpperCase()))
+                            .toList(),
                       )
                     : null,
               ),
@@ -190,57 +202,72 @@ Version de l’app : 1.0.0+2''';
                   : TabBarView(
                       controller: _tabController,
                       children: activeTabs.map((tab) {
-                        final tabOffers = catalog.offers
-                            .where((o) => o.tab == tab.id)
-                            .toList()
-                          ..sort((a, b) => a.price.compareTo(b.price));
+                        final tabOffers =
+                            catalog.offers
+                                .where((o) => o.tab == tab.id)
+                                .toList()
+                              ..sort((a, b) => a.price.compareTo(b.price));
 
-                         return ListView(
-                           key: PageStorageKey<String>('catalog_${widget.catalogId}_${tab.id}'),
-                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                           children: [
-                             // Sélecteur de mode de paiement attribuant (Crédit / MoMo)
-                             if (catalog.payWith.length > 1)
-                               Padding(
-                                 padding: const EdgeInsets.only(bottom: 14),
-                                 child: _PaymentSelector(catalog: catalog),
-                               ),
+                        return ListView(
+                          key: PageStorageKey<String>(
+                            'catalog_${widget.catalogId}_${tab.id}',
+                          ),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          children: [
+                            // Sélecteur de mode de paiement attribuant (Crédit / MoMo)
+                            if (catalog.payWith.length > 1)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _PaymentSelector(catalog: catalog),
+                              ),
 
-                             if (isOutdated)
+                            if (isOutdated)
                               Container(
                                 margin: const EdgeInsets.only(bottom: 14),
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: Colors.amber.shade700.withValues(alpha: 0.4)),
+                                  border: Border.all(
+                                    color: Colors.amber.shade700.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
-                                    Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800),
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.amber.shade800,
+                                    ),
                                     const SizedBox(width: 10),
                                     const Expanded(
                                       child: Text(
                                         'Ces tarifs peuvent avoir changé récemment.',
-                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
 
-                            ...tabOffers.map((offer) => _OfferCard(
-                              offer: offer,
-                              catalog: catalog,
-                              operator: operator,
-                              isBestValue: offer.id == bestOfferId,
-                              onTap: () => ServiceLauncher.launchOffer(
-                                context,
-                                catalog: catalog,
+                            ...tabOffers.map(
+                              (offer) => _OfferCard(
                                 offer: offer,
+                                catalog: catalog,
                                 operator: operator,
+                                isBestValue: offer.id == bestOfferId,
+                                onTap: () => ServiceLauncher.launchOffer(
+                                  context,
+                                  catalog: catalog,
+                                  offer: offer,
+                                  operator: operator,
+                                ),
                               ),
-                            )),
+                            ),
 
                             const SizedBox(height: 20),
                             // Fraîcheur des tarifs & Signalement
@@ -252,7 +279,10 @@ Version de l’app : 1.0.0+2''';
                                       'Tarifs mis à jour le ${catalog.verifiedAt}',
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -268,10 +298,16 @@ Version de l’app : 1.0.0+2''';
                                       catalogLabel: catalog.label,
                                       verifiedAt: catalog.verifiedAt,
                                     ),
-                                    icon: const Icon(Icons.report_problem_outlined, size: 16),
+                                    icon: const Icon(
+                                      Icons.report_problem_outlined,
+                                      size: 16,
+                                    ),
                                     label: const Text(
                                       'Signaler un tarif incorrect',
-                                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -290,9 +326,7 @@ Version de l’app : 1.0.0+2''';
 
   Widget _buildLoadingScaffold(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title ?? 'Chargement...'),
-      ),
+      appBar: AppBar(title: Text(widget.title ?? 'Chargement...')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: const [
@@ -310,9 +344,7 @@ Version de l’app : 1.0.0+2''';
 
   Widget _buildEmptyScaffold(BuildContext context, String message) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title ?? 'Catalogue'),
-      ),
+      appBar: AppBar(title: Text(widget.title ?? 'Catalogue')),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -321,7 +353,11 @@ Version de l’app : 1.0.0+2''';
             children: [
               const Icon(Icons.inbox_outlined, size: 64, color: Colors.grey),
               const SizedBox(height: 16),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16),
+              ),
               const SizedBox(height: 20),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(),
@@ -417,14 +453,18 @@ class _OfferCard extends StatelessWidget {
                           offer.validityLabel!,
                           style: TextStyle(
                             fontSize: 13,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                            color: theme.colorScheme.onSurface.withValues(
+                              alpha: 0.55,
+                            ),
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
 
                       // Badges
-                      if (isBestValue || offer.badges.isNotEmpty || isToTest) ...[
+                      if (isBestValue ||
+                          offer.badges.isNotEmpty ||
+                          isToTest) ...[
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 6,
@@ -432,7 +472,10 @@ class _OfferCard extends StatelessWidget {
                           children: [
                             if (isBestValue)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.green.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
@@ -440,7 +483,11 @@ class _OfferCard extends StatelessWidget {
                                 child: const Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.thumb_up_alt_rounded, size: 12, color: Colors.green),
+                                    Icon(
+                                      Icons.thumb_up_alt_rounded,
+                                      size: 12,
+                                      color: Colors.green,
+                                    ),
                                     SizedBox(width: 4),
                                     Text(
                                       'Meilleur rapport',
@@ -453,24 +500,35 @@ class _OfferCard extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                            ...offer.badges.map((badge) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: operator.color.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                badge,
-                                style: TextStyle(
-                                  color: OperatorLogo.accent(context, operator.color),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
+                            ...offer.badges.map(
+                              (badge) => Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: operator.color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  badge,
+                                  style: TextStyle(
+                                    color: OperatorLogo.accent(
+                                      context,
+                                      operator.color,
+                                    ),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                                 ),
                               ),
-                            )),
+                            ),
                             if (isToTest && !isUnconfirmedTitle)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 7,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: Colors.amber.withValues(alpha: 0.16),
                                   borderRadius: BorderRadius.circular(6),
@@ -510,7 +568,9 @@ class _OfferCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.45,
+                        ),
                       ),
                     ),
                   ],
@@ -550,11 +610,14 @@ class _PaymentSelectorState extends State<_PaymentSelector> {
   }
 
   Future<void> _load() async {
-    final saved = await UserPreferencesService.instance
-        .catalogPayment(widget.catalog.id);
+    final saved = await UserPreferencesService.instance.catalogPayment(
+      widget.catalog.id,
+    );
     final options = widget.catalog.payWith;
     final valid = options.where((option) => option.id == saved).toList();
-    final initial = valid.isNotEmpty ? saved : (options.isNotEmpty ? options.first.id : null);
+    final initial = valid.isNotEmpty
+        ? saved
+        : (options.isNotEmpty ? options.first.id : null);
     if (mounted && initial != _selectedId) {
       setState(() => _selectedId = initial);
     }

@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.telephony.TelephonyManager
 import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
@@ -13,6 +14,7 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val channelName = "com.zoli.app/unione_ussd"
+    private val deviceChannelName = "com.zoli.app/unione_device"
     private val tag = "UNIONE/USSD"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -25,6 +27,24 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+        // Informations techniques non personnelles pour les signalements.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, deviceChannelName).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getDeviceInfo" -> result.success(deviceInfo())
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun deviceInfo(): Map<String, String> {
+        val model = listOf(Build.MANUFACTURER, Build.MODEL)
+            .filter { it.isNotBlank() }
+            .joinToString(" ")
+        return mapOf(
+            "androidVersion" to Build.VERSION.RELEASE,
+            "sdkInt" to Build.VERSION.SDK_INT.toString(),
+            "model" to model,
+        )
     }
 
     // Lance le code USSD via ACTION_CALL : le système se comporte exactement

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../config/app_config.dart';
 import '../models/menu_node.dart';
 import '../services/user_preferences_service.dart';
+import '../services/whatsapp_launcher.dart';
 import 'operator_logo.dart';
 
 /// Feuille ouverte par un appui long sur une opération (menus, recherche, favoris) :
@@ -52,8 +53,9 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
   late final bool _favorite = widget.favorite;
 
   Future<void> _toggleFavorite() async {
-    final newState =
-        await UserPreferencesService.instance.toggleFavorite(widget.node.id);
+    final newState = await UserPreferencesService.instance.toggleFavorite(
+      widget.node.id,
+    );
     if (!mounted) return;
     Navigator.pop(context, newState);
   }
@@ -65,20 +67,16 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
       widget.operator.name,
       ...widget.tree.breadcrumb(widget.node.id).map((item) => item.label),
     ].join(' › ');
-    final message = 'Bonjour, je souhaite signaler un code qui ne marche plus.\n\n'
-        'Opérateur : ${widget.operator.name}\n'
-        'Chemin : $path\n'
-        'Service : ${widget.node.label}\n'
-        'Code : ${widget.node.code ?? 'non disponible'}\n'
-        'Version de l’app : ${const String.fromEnvironment('UNIONE_APP_VERSION', defaultValue: '1.0.0+2')}\n'
-        'Version du JSON : ${widget.tree.version}';
-    final uri = Uri.https('wa.me', '/22991831317', {'text': message});
-    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-    if (!opened) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('WhatsApp n’a pas pu être ouvert.')),
-      );
-    }
+    final status = await WhatsAppLauncher.open(
+      message: AppConfig.reportCodeMessage(
+        operatorName: widget.operator.name,
+        path: path,
+        service: widget.node.label,
+        code: widget.node.code,
+        treeVersion: '${widget.tree.version}',
+      ),
+    );
+    WhatsAppLauncher.notify(messenger, status);
   }
 
   @override
@@ -96,8 +94,14 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: OperatorLogo.accent(context, widget.operator.color).withValues(alpha: .15),
-                  child: Icon(Icons.dialpad_rounded, color: OperatorLogo.accent(context, widget.operator.color)),
+                  backgroundColor: OperatorLogo.accent(
+                    context,
+                    widget.operator.color,
+                  ).withValues(alpha: .15),
+                  child: Icon(
+                    Icons.dialpad_rounded,
+                    color: OperatorLogo.accent(context, widget.operator.color),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -109,7 +113,10 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
                         widget.node.label,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       Text(
                         path,
@@ -118,7 +125,9 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .55),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: .55),
                         ),
                       ),
                     ],
@@ -133,7 +142,9 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
               _favorite ? Icons.star_rounded : Icons.star_outline_rounded,
               color: _favorite ? Colors.amber : null,
             ),
-            title: Text(_favorite ? 'Retirer des favoris' : 'Ajouter aux favoris'),
+            title: Text(
+              _favorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+            ),
             onTap: _toggleFavorite,
           ),
           ListTile(

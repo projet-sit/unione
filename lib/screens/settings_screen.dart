@@ -1,19 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../config/app_config.dart';
+import '../services/device_info_service.dart';
 import '../services/theme_service.dart';
+import '../services/whatsapp_launcher.dart';
 import '../widgets/info_bottom_sheet.dart';
 import '../widgets/share_sheet.dart';
+import 'help_screen.dart';
 import 'history_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
-  Future<void> _launchWhatsApp() async {
-    final Uri whatsappUri = Uri.parse("https://wa.me/22991831317");
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-    }
+  Future<void> _launchWhatsApp(BuildContext context, {String? message}) async {
+    await WhatsAppLauncher.openWithFeedback(context, message: message);
+  }
+
+  Future<void> _reportProblem(BuildContext context) async {
+    final info = await DeviceInfoService().read();
+    if (!context.mounted) return;
+    await _launchWhatsApp(
+      context,
+      message: AppConfig.reportProblemMessage(
+        androidVersion: info.androidVersion,
+        model: info.model,
+      ),
+    );
+  }
+
+  Future<void> _copyWhatsAppNumber(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await Clipboard.setData(
+      const ClipboardData(text: AppConfig.whatsappDisplay),
+    );
+    messenger.showSnackBar(
+      SnackBar(content: Text('whatsapp_number_copied'.tr())),
+    );
   }
 
   @override
@@ -125,6 +148,45 @@ class SettingsScreen extends StatelessWidget {
           ]),
 
           const SizedBox(height: 24),
+          _buildSectionTitle(context, 'assistance'.tr()),
+          _buildSettingsCard(context, [
+            _buildSettingTile(
+              context: context,
+              icon: Icons.report_problem_outlined,
+              title: 'report_problem'.tr(),
+              subtitle: 'report_problem_subtitle'.tr(),
+              onTap: () => _reportProblem(context),
+            ),
+            _buildDivider(context),
+            _buildSettingTile(
+              context: context,
+              icon: Icons.help_outline_rounded,
+              title: 'help_faq'.tr(),
+              subtitle: 'help_faq_subtitle'.tr(),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HelpScreen()),
+                );
+              },
+            ),
+          ]),
+
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'contact'.tr()),
+          _buildSupportCard(context),
+          const SizedBox(height: 12),
+          _buildSettingsCard(context, [
+            _buildSettingTile(
+              context: context,
+              icon: Icons.copy_rounded,
+              title: 'copy_whatsapp_number'.tr(),
+              subtitle: AppConfig.whatsappDisplay,
+              onTap: () => _copyWhatsAppNumber(context),
+            ),
+          ]),
+
+          const SizedBox(height: 24),
           _buildSectionTitle(context, 'about_section'.tr()),
           _buildSettingsCard(context, [
             _buildSettingTile(
@@ -138,7 +200,7 @@ class SettingsScreen extends StatelessWidget {
                   backgroundColor: Colors.transparent,
                   builder: (context) => InfoBottomSheet(
                     title: 'about'.tr(),
-                    subtitle: 'Version 1.0.0+2',
+                    subtitle: 'Version ${AppConfig.appVersion}',
                     content: 'about_zoli_desc'.tr(),
                     icon: Icons.info_outline,
                   ),
@@ -179,9 +241,6 @@ class SettingsScreen extends StatelessWidget {
               onTap: () => UnioneShareSheet.show(context),
             ),
           ]),
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'contact'.tr()),
-          _buildSupportCard(context),
 
           const SizedBox(height: 40),
         ],
@@ -211,7 +270,7 @@ class SettingsScreen extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: _launchWhatsApp,
+          onTap: () => _launchWhatsApp(context),
           borderRadius: BorderRadius.circular(24),
           child: Padding(
             padding: const EdgeInsets.all(20),
