@@ -8,7 +8,6 @@ import '../models/history_item.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'android_ussd_gateway.dart';
-import 'user_preferences_service.dart';
 
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -87,7 +86,7 @@ class UssdService {
       final permissionGranted = await _requestPhonePermission(context);
       if (!context.mounted) return false;
       if (permissionGranted) {
-        final selection = await _chooseSim(context, operatorId);
+        final selection = await _chooseSim(context);
         if (!context.mounted) return false;
         if (selection.cancelled) return false;
         final sim = selection.sim;
@@ -175,40 +174,15 @@ class UssdService {
     return (await Permission.phone.request()).isGranted;
   }
 
+  /// Demande systématiquement la carte SIM à utiliser (double SIM uniquement).
+  /// Aucun choix n'est mémorisé : la question est posée à chaque opération.
   static Future<({SimCard? sim, bool cancelled})> _chooseSim(
     BuildContext context,
-    String? operatorId,
   ) async {
     final sims = await _gateway.getSims();
     if (sims.length < 2) {
       return (sim: sims.isEmpty ? null : sims.first, cancelled: false);
     }
-    // 1. Carte détectée pour cet opérateur (nom d'opérateur de la SIM).
-    final keyword = switch (operatorId) {
-      'mtn' => 'mtn',
-      'moov' => 'moov',
-      'celtiis' => 'celtiis',
-      _ => null,
-    };
-    if (keyword != null) {
-      for (final sim in sims) {
-        final name = '${sim.label} ${sim.operatorName ?? ''}'.toLowerCase();
-        if (name.contains(keyword)) {
-          return (sim: sim, cancelled: false);
-        }
-      }
-    }
-    // 2. Carte mémorisée pour cet opérateur, si toujours active.
-    if (operatorId != null) {
-      final lastId =
-          await UserPreferencesService.instance.lastSim(operatorId);
-      for (final sim in sims) {
-        if (sim.subscriptionId == lastId) {
-          return (sim: sim, cancelled: false);
-        }
-      }
-    }
-    // 3. Aucune correspondance : on demande une fois et on mémorise.
     if (!context.mounted) return (sim: null, cancelled: true);
     final selected = await showModalBottomSheet<SimCard>(
       context: context,
@@ -242,10 +216,6 @@ class UssdService {
         ),
       ),
     );
-    if (selected != null && operatorId != null) {
-      await UserPreferencesService.instance
-          .saveLastSim(operatorId, selected.subscriptionId);
-    }
     return (sim: selected, cancelled: selected == null);
   }
 

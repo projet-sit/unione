@@ -27,18 +27,5 @@ void main() {
       expect(removed, isFalse);
       expect(await service.favorites(), isNot(contains('mtn_solde')));
     });
-
-    test('saves and retrieves last SIM by operator', () async {
-      final service = UserPreferencesService.instance;
-
-      expect(await service.lastSim('mtn'), isNull);
-
-      await service.saveLastSim('mtn', 2);
-      expect(await service.lastSim('mtn'), 2);
-
-      await service.saveLastSim('moov', 1);
-      expect(await service.lastSim('moov'), 1);
-      expect(await service.lastSim('mtn'), 2);
-    });
   });
 }
