@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/app_config.dart';
+import '../services/apk_share_service.dart';
 
 /// Feuille de partage native (WhatsApp, SMS, Telegram, etc.).
 class UnioneShareSheet extends StatelessWidget {
@@ -18,17 +21,45 @@ class UnioneShareSheet extends StatelessWidget {
     );
   }
 
-  Future<void> _share(BuildContext context) async {
+  Rect? _origin(BuildContext context) {
     final box = context.findRenderObject() as RenderBox?;
+    return box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+  }
+
+  Future<void> _share(BuildContext context) async {
     await SharePlus.instance.share(
       ShareParams(
         text: AppConfig.shareText,
         subject: 'UNIONE',
-        sharePositionOrigin: box == null
-            ? null
-            : box.localToGlobal(Offset.zero) & box.size,
+        sharePositionOrigin: _origin(context),
       ),
     );
+  }
+
+  Future<void> _shareApk(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final apk = await ApkShareService().prepare();
+      if (!context.mounted) return;
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile(
+              apk.path,
+              mimeType: 'application/vnd.android.package-archive',
+            ),
+          ],
+          text: AppConfig.shareText,
+          subject: 'UNIONE',
+          sharePositionOrigin: _origin(context),
+        ),
+      );
+    } on ApkShareUnavailableException catch (error) {
+      final message = error.code == 'APK_SIGNATURE_INVALID'
+          ? 'apk_share_invalid'.tr()
+          : 'apk_share_failed'.tr();
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    }
   }
 
   void _copy(BuildContext context) {
@@ -133,6 +164,30 @@ class UnioneShareSheet extends StatelessWidget {
                       style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                   ),
+                  if (Platform.isAndroid) ...[
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () => _shareApk(context),
+                      icon: const Icon(Icons.android_rounded),
+                      label: Column(
+                        children: [
+                          Text(
+                            'share_apk_action'.tr(),
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          Text(
+                            'share_apk_subtitle'.tr(),
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: colorScheme.onSurface.withValues(
+                                alpha: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 10),
                   OutlinedButton.icon(
                     onPressed: () => _copy(context),
