@@ -54,6 +54,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.7
   sqflite_common_ffi: ^2.3.4+1
 
 # For information on the generic Dart part of this file, see the
@@ -65,6 +66,7 @@ flutter:
   assets:
     - assets/translations/
     - assets/icon.png
+    - assets/images/
     - assets/logos/
     - assets/data/
 
@@ -102,5 +104,16 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon.png"
+  image_path: "assets/images/app_logo.png"
+  adaptive_icon_background: "#050B26"
+  adaptive_icon_foreground: "assets/images/app_logo.png"
+
+flutter_native_splash:
+  android: true
+  ios: true
+  image: assets/images/app_logo.png
+  color: "#050B26"
+  android_12:
+    color: "#050B26"
+    image: assets/images/app_logo.png
 
