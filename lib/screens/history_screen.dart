@@ -552,6 +552,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         children: [
                           Text(
                             item.title.tr(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: colorScheme.onSurface,
                               fontWeight: FontWeight.w800,

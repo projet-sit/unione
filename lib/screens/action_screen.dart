@@ -116,7 +116,14 @@ class _ActionScreenState extends State<ActionScreen> {
             padding: const EdgeInsets.all(24),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Expanded(child: ListView(children: [
-                if (node.description != null) ...[const SizedBox(height: 4), Text(node.description!)],
+                if (node.description != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    node.description!,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
                 if (node.params.isNotEmpty) ...[
                   const SizedBox(height: 18), const Text('Informations requises', style: TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 12), ...node.params.map(_fieldFor),

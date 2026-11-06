@@ -443,6 +443,8 @@ class _OfferCard extends StatelessWidget {
                       else
                         Text(
                           offer.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                           style: TextStyle(
                             fontSize: 17,
                             fontWeight: FontWeight.w900,

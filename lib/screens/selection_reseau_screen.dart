@@ -254,8 +254,17 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                 });
               },
               leading: OperatorLogo(operatorId: operator.id, size: 40, borderRadius: 10),
-              title: Text(node.label, style: const TextStyle(fontWeight: FontWeight.w800)),
-              subtitle: Text(subtitle),
+              title: Text(
+                node.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+              subtitle: Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
               trailing: isCatalog
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -295,11 +304,19 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                 leading: OperatorLogo(operatorId: match.operator.id, size: 40, borderRadius: 10),
                 title: Text(
                   title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
-                subtitle: Text(subtitle),
+                subtitle: Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 trailing: Text(
                   '${match.offer.price} F',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,

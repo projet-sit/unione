@@ -52,6 +52,14 @@ class ZapApp extends StatelessWidget {
                 theme: AppTheme.lightTheme,
                 darkTheme: AppTheme.darkTheme,
                 themeMode: themeNotifier.themeMode,
+                builder: (context, child) {
+                  // ignore: deprecated_member_use
+                  final scale = MediaQuery.textScaleFactorOf(context).clamp(0.9, 1.3);
+                  return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(scale)),
+                    child: child!,
+                  );
+                },
                 home: SecureGate(
                   opacity: 0.9,
                   lockedBuilder: (context, notifier) =>
