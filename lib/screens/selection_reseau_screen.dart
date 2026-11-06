@@ -33,7 +33,6 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   final _search = TextEditingController();
   Timer? _debounce;
   Set<String> _favorites = {};
-  List<HistoryItem> _recent = [];
   String? _detectedOperator;
 
   @override
@@ -59,7 +58,6 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
 
   Future<void> _loadPersonalization() async {
     final favorites = await UserPreferencesService.instance.favorites();
-    final recent = await _history.getHistory();
     String? detected;
     if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
       if (await Permission.phone.isGranted) {
@@ -67,7 +65,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
         detected = names.contains('mtn') ? 'mtn' : names.contains('moov') ? 'moov' : names.contains('celtiis') ? 'celtiis' : null;
       }
     }
-    if (mounted) setState(() { _favorites = favorites; _recent = recent.where((item) => item.type == HistoryType.ussdLaunch && item.serviceId != null).take(4).toList(); _detectedOperator = detected; });
+    if (mounted) setState(() { _favorites = favorites; _detectedOperator = detected; });
   }
 
   Future<void> _openOperator(OperatorTree operator) async {
@@ -127,8 +125,6 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
         final searchableNodes = tree.searchableNodes.toList(growable: false);
         final results = query.isEmpty ? const <MenuNode>[] : searchableNodes.where((node) => [node.label, node.category ?? '', ...node.keywords].join(' ').toLowerCase().contains(query)).toList();
         final favorites = searchableNodes.where((node) => _favorites.contains(node.id)).toList();
-        final recentIds = _recent.map((item) => item.serviceId!).toSet();
-        final recents = searchableNodes.where((node) => recentIds.contains(node.id)).toList();
 
         return ValueListenableBuilder<CatalogsData?>(
           valueListenable: CodesRepository.instance.catalogs,
@@ -219,7 +215,6 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                   ],
                 ] else ...[
                   if (favorites.isNotEmpty) ...[_title('Favoris'), _actionList(tree, favorites)],
-                  if (recents.isNotEmpty) ...[_title('Récents'), _actionList(tree, recents)],
                   _title('Veuillez sélectionner un réseau :'),
                   ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), isDetected: operator.id == _detectedOperator, onTap: () => _openOperator(operator)))),
                 ],
