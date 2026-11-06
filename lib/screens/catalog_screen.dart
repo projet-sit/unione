@@ -462,7 +462,7 @@ class _OfferCard extends StatelessWidget {
                               child: Text(
                                 badge,
                                 style: TextStyle(
-                                  color: isDark ? Colors.white70 : operator.color,
+                                  color: OperatorLogo.accent(context, operator.color),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -502,7 +502,7 @@ class _OfferCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
-                        color: operator.color,
+                        color: OperatorLogo.accent(context, operator.color),
                       ),
                     ),
                     Text(

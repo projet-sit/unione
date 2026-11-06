@@ -3,6 +3,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../models/menu_node.dart';
 import '../services/user_preferences_service.dart';
+import 'operator_logo.dart';
 
 /// Feuille ouverte par un appui long sur une opération (menus, recherche, favoris) :
 /// ajouter/retirer des favoris et signaler un code qui ne marche plus.
@@ -95,8 +96,8 @@ class _OperationMenuSheetState extends State<OperationMenuSheet> {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: widget.operator.color.withValues(alpha: .15),
-                  child: Icon(Icons.dialpad_rounded, color: widget.operator.color),
+                  backgroundColor: OperatorLogo.accent(context, widget.operator.color).withValues(alpha: .15),
+                  child: Icon(Icons.dialpad_rounded, color: OperatorLogo.accent(context, widget.operator.color)),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

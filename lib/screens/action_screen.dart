@@ -3,6 +3,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 
 import '../models/menu_node.dart';
 import '../services/benin_phone.dart';
+import '../widgets/operator_logo.dart';
 import '../services/codes_repository.dart';
 import '../services/ussd_service.dart';
 
@@ -124,7 +125,7 @@ class _ActionScreenState extends State<ActionScreen> {
                 if (unavailable) ...[const SizedBox(height: 16), _Notice(text: node.status == 'obsolete' ? 'Ce code est obsolète.' : 'Code bientôt disponible. Vérification en cours.')],
               ])),
               SizedBox(width: double.infinity, height: 56, child: FilledButton.icon(
-                style: FilledButton.styleFrom(backgroundColor: operator.color),
+                style: FilledButton.styleFrom(backgroundColor: OperatorLogo.accent(context, operator.color)),
                 onPressed: unavailable || !ready || _launching ? null : () => _launch(node, operator),
                 icon: _launching ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Icon(Icons.phone_forwarded_rounded),
                 label: Text(node.label),

@@ -102,7 +102,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     final child = visibleChildren[index];
                     return _NodeCard(
                       node: child,
-                      color: operator.color,
+                      color: OperatorLogo.accent(context, operator.color),
                       onTap: () {
                         HapticFeedback.selectionClick();
                         switch (child.type) {
