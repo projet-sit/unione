@@ -55,6 +55,14 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => _showThemeDialog(context),
               ),
             ),
+            _buildDivider(context),
+            _buildSettingTile(
+              context: context,
+              icon: Icons.sim_card_outlined,
+              title: 'sim_help_title'.tr(),
+              subtitle: 'sim_help_subtitle'.tr(),
+              onTap: () => _showSimHelpSheet(context),
+            ),
           ]),
 
           const SizedBox(height: 24),
@@ -308,6 +316,20 @@ class SettingsScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSimHelpSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => InfoBottomSheet(
+        title: 'sim_help_title'.tr(),
+        subtitle: 'sim_help_subtitle'.tr(),
+        content: 'sim_help_desc'.tr(),
+        icon: Icons.sim_card_outlined,
       ),
     );
   }

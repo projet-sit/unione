@@ -1,13 +1,17 @@
-import 'package:flutter/material.dart';
 import 'dart:io';
+
 import 'package:easy_localization/easy_localization.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'security_service.dart';
-import 'history_service.dart';
-import '../models/history_item.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import '../models/history_item.dart';
 import 'android_ussd_gateway.dart';
+import 'history_service.dart';
+import 'security_service.dart';
 
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -18,6 +22,13 @@ class UssdService {
   /// ne contient que des chiffres, `*` et `#`.
   /// Protège contre l'injection de codes provenant d'un JSON compromis.
   static final RegExp _ussdPattern = RegExp(r'^\*[\d*#]+#$');
+
+  /// Construit l'URI `tel:` d'un code USSD.
+  ///
+  /// `#` est encodé en `%23` (sinon Android le traite comme un fragment et
+  /// tronque le code). Les `*` restent littéraux : `*880#` → `tel:*880%23`.
+  static String buildTelUri(String code) =>
+      'tel:${code.replaceAll('#', '%23')}';
 
   static Future<bool> verifyIdentity() async {
     try {
@@ -38,12 +49,13 @@ class UssdService {
     }
   }
 
-  /// Lance un code USSD via `TelephonyManager.sendUssdRequest` (Android 8+).
+  /// Lance un code USSD via `ACTION_CALL` (comportement d'une composition
+  /// manuelle au clavier).
   ///
-  /// Le premier callback `onReceiveUssdResponse` ne sert qu'à confirmer
-  /// l'envoi et à noter l'opération dans l'historique : l'affichage et
-  /// l'interaction (menu opérateur, champ de réponse, Annuler/Envoyer) sont
-  /// gérés par le dialogue USSD natif d'Android, jamais par un écran Flutter.
+  /// Aucune SIM n'est transmise à l'intent : Android affiche lui-même sa
+  /// fenêtre de choix de SIM (ou utilise la SIM par défaut des appels), puis
+  /// ouvre le dialogue USSD de l'opérateur. L'application ne présente aucun
+  /// sélecteur de SIM.
   static Future<bool> launchUssd(
     BuildContext context,
     String code, {
@@ -64,7 +76,7 @@ class UssdService {
     // On force le format USSD (*...#) uniquement si le code contient déjà * ou #,
     // ou s'il s'agit d'un code court de exactement 3 chiffres (ex: 104 -> *104#).
     // Les numéros de 4 chiffres ou plus sans * ou # sont traités comme des numéros d'appel (ex: 7373).
-    bool isUssd =
+    final bool isUssd =
         encodedCode.contains('*') ||
         encodedCode.contains('#') ||
         encodedCode.length == 3;
@@ -81,53 +93,64 @@ class UssdService {
       }
     }
 
-    try {
-      // iOS ne donne pas accès à la réponse USSD : on ouvre directement le composeur.
-      if (!Platform.isAndroid) {
-        final launched = await _openDialer(encodedCode);
-        if (launched) await _logLaunch(title, network, serviceId);
-        if (!launched && context.mounted) {
-          _showFailure(context, 'launch_failed'.tr());
-        }
-        return launched;
-      }
-      final permissionGranted = await _requestPhonePermission(context);
-      if (!context.mounted) return false;
-      if (permissionGranted) {
-        final selection = await _chooseSim(context);
-        if (!context.mounted) return false;
-        if (selection.cancelled) return false;
-        final sim = selection.sim;
-        final result = await _gateway.execute(
-          encodedCode,
-          subscriptionId: sim?.subscriptionId,
-        );
-        if (result?.success == true) {
-          await _logLaunch(title, network, serviceId);
-          // La réponse, le menu de l'opérateur et la saisie de réponse sont
-          // affichés par le dialogue USSD natif d'Android (fenêtre système
-          // avec champ de saisie et boutons Annuler/Envoyer) : aucun écran
-          // Flutter ne doit être présenté par-dessus.
-          return true;
-        }
-        if (result != null && result.error != null && context.mounted) {
-          _showFailure(context, _readableError(result.error!));
-        }
-      }
-
-      // iOS, Android antérieur à 8, permission refusée ou API opérateur indisponible.
-      final launched = await _openDialer(encodedCode);
-      if (launched) await _logLaunch(title, network, serviceId);
-      if (!launched && context.mounted) {
-        _showFailure(context, 'launch_failed'.tr());
-      }
-      return launched;
-    } catch (e, stack) {
-      AuditService.logError('Échec USSD', e, stack);
-      if (!context.mounted) return false;
-      _showFailure(context, 'launch_failed'.tr());
-      return false;
+    final telUri = buildTelUri(encodedCode);
+    if (kDebugMode) {
+      debugPrint('[UNIONE] URI USSD finale: $telUri');
     }
+
+    // iOS ne donne pas accès à la réponse USSD : on ouvre directement le composeur.
+    if (!Platform.isAndroid) {
+      return _openDialer(
+        context,
+        encodedCode,
+        title: title,
+        network: network,
+        serviceId: serviceId,
+      );
+    }
+
+    final permissionGranted = await _requestPhonePermission();
+    if (!context.mounted) return false;
+
+    if (!permissionGranted) {
+      AuditService.logWarning(
+        'Permission CALL_PHONE refusée : ouverture du composeur.',
+      );
+      _showFailure(context, 'phone_permission_denied'.tr());
+      return _openDialer(
+        context,
+        encodedCode,
+        title: title,
+        network: network,
+        serviceId: serviceId,
+      );
+    }
+
+    try {
+      final launched = await _gateway.launchNative(encodedCode);
+      if (launched) {
+        await _logLaunch(title, network, serviceId);
+        return true;
+      }
+      AuditService.logError('ACTION_CALL non démarré', telUri);
+      if (context.mounted) _showFailure(context, 'launch_direct_failed'.tr());
+    } on PlatformException catch (e, stack) {
+      AuditService.logError('Échec ACTION_CALL', e, stack);
+      if (context.mounted) _showFailure(context, 'launch_direct_failed'.tr());
+    } on MissingPluginException catch (e, stack) {
+      AuditService.logError('MethodChannel USSD indisponible', e, stack);
+      if (context.mounted) _showFailure(context, 'launch_direct_failed'.tr());
+    }
+
+    // Repli : composeur pré-rempli, sans lancer l'appel.
+    if (!context.mounted) return false;
+    return _openDialer(
+      context,
+      encodedCode,
+      title: title,
+      network: network,
+      serviceId: serviceId,
+    );
   }
 
   /// Lance un numéro classique dans le composeur et conserve le même historique
@@ -140,12 +163,13 @@ class UssdService {
     String? network,
     String? serviceId,
   }) async {
-    final launched = await _openDialer(number.trim());
-    if (launched) await _logLaunch(title, network, serviceId);
-    if (!launched && context.mounted) {
-      _showFailure(context, 'launch_failed'.tr());
-    }
-    return launched;
+    return _openDialer(
+      context,
+      number.trim(),
+      title: title,
+      network: network,
+      serviceId: serviceId,
+    );
   }
 
   static Future<void> _logLaunch(
@@ -160,94 +184,48 @@ class UssdService {
     type: HistoryType.ussdLaunch,
   );
 
-  static Future<bool> _requestPhonePermission(BuildContext context) async {
+  /// Demande la permission d'appel via le dialogue système Android.
+  /// Aucun écran intermédiaire Flutter : le système gère l'autorisation.
+  static Future<bool> _requestPhonePermission() async {
     if (await Permission.phone.isGranted) return true;
-    if (!context.mounted) return false;
-    final accepted = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Autoriser les appels USSD ?'),
-        content: const Text(
-          'UNIONE utilise le téléphone et l’état de la SIM uniquement pour lancer le code USSD et vous laisser choisir une SIM. Aucune donnée de transaction ni code PIN n’est enregistrée.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('PLUS TARD'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('AUTORISER'),
-          ),
-        ],
-      ),
-    );
-    if (accepted != true) return false;
+    if (await Permission.phone.isPermanentlyDenied) return false;
     return (await Permission.phone.request()).isGranted;
   }
 
-  /// Demande systématiquement la carte SIM à utiliser (double SIM uniquement).
-  /// Aucun choix n'est mémorisé : la question est posée à chaque opération.
-  static Future<({SimCard? sim, bool cancelled})> _chooseSim(
+  /// Ouvre le composeur pré-rempli (`ACTION_DIAL` sur Android).
+  /// Ne lance jamais l'appel : l'utilisateur appuie lui-même sur « Appeler ».
+  static Future<bool> _openDialer(
     BuildContext context,
-  ) async {
-    final sims = await _gateway.getSims();
-    if (sims.length < 2) {
-      return (sim: sims.isEmpty ? null : sims.first, cancelled: false);
+    String code, {
+    String? title,
+    String? network,
+    String? serviceId,
+  }) async {
+    final uri = buildTelUri(code);
+    try {
+      final bool launched;
+      if (Platform.isAndroid) {
+        launched = await _gateway.dialNative(code);
+      } else {
+        launched = await launchUrl(
+          Uri.parse(uri),
+          mode: LaunchMode.externalApplication,
+        );
+      }
+      if (launched) {
+        await _logLaunch(title, network, serviceId);
+        return true;
+      }
+      AuditService.logError('Composeur indisponible', uri);
+    } on PlatformException catch (e, stack) {
+      AuditService.logError('Échec ACTION_DIAL', e, stack);
+    } on MissingPluginException catch (e, stack) {
+      AuditService.logError('MethodChannel composeur indisponible', e, stack);
+    } catch (e, stack) {
+      AuditService.logError('Échec du composeur', e, stack);
     }
-    if (!context.mounted) return (sim: null, cancelled: true);
-    final selected = await showModalBottomSheet<SimCard>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 8, 24, 12),
-              child: Text(
-                'Choisir la carte SIM',
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
-              ),
-            ),
-            ...sims.map(
-              (sim) => ListTile(
-                leading: Icon(
-                  Icons.sim_card_rounded,
-                  color: Theme.of(sheetContext).colorScheme.primary,
-                ),
-                title: Text(sim.label),
-                subtitle: sim.operatorName == null
-                    ? null
-                    : Text(sim.operatorName!),
-                onTap: () => Navigator.pop(sheetContext, sim),
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-        ),
-      ),
-    );
-    return (sim: selected, cancelled: selected == null);
-  }
-
-  static Future<bool> _openDialer(String code) async {
-    final uri = Uri.parse('tel:${code.replaceAll('#', '%23')}');
-    return launchUrl(uri, mode: LaunchMode.externalApplication);
-  }
-
-  static String _readableError(String error) {
-    final normalized = error.toLowerCase();
-    if (normalized.contains('service') || normalized.contains('network')) {
-      return 'Le réseau mobile est indisponible. Réessayez dans quelques instants.';
-    }
-    if (normalized.contains('sim') || normalized.contains('subscription')) {
-      return 'Aucune carte SIM active n’a été trouvée.';
-    }
-    if (normalized.contains('cancel') || normalized.contains('reject')) {
-      return 'Le code USSD a été refusé ou annulé par l’opérateur.';
-    }
-    return 'Le code USSD n’a pas pu être exécuté. Le composeur va être ouvert si disponible.';
+    if (context.mounted) _showFailure(context, 'launch_failed'.tr());
+    return false;
   }
 
   static String buildFromTemplate({

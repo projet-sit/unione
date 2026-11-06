@@ -1,8 +1,46 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:unione/services/android_ussd_gateway.dart';
 import 'package:unione/services/benin_phone.dart';
 import 'package:unione/services/ussd_service.dart';
 
 void main() {
+  group('UssdService.buildTelUri', () {
+    test('encode le # et conserve les *', () {
+      expect(UssdService.buildTelUri('*880#'), 'tel:*880%23');
+    });
+
+    test('encode un code à paramètres et conserve les *', () {
+      expect(UssdService.buildTelUri('*880*45#'), 'tel:*880*45%23');
+    });
+
+    test('encode un code construit avec des paramètres, sans PIN', () {
+      final code = UssdService.buildFromTemplate(
+        template: '*880*1*1*{numero}*{montant}#',
+        data: {'numero': '97000000', 'montant': '1000'},
+      );
+
+      expect(code, '*880*1*1*97000000*1000#');
+      expect(
+        UssdService.buildTelUri(code),
+        'tel:*880*1*1*97000000*1000%23',
+      );
+    });
+  });
+
+  group('operatorIdFromMccMnc', () {
+    test('reconnaît les opérateurs béninois', () {
+      expect(operatorIdFromMccMnc('61602'), 'moov');
+      expect(operatorIdFromMccMnc('61603'), 'mtn');
+      expect(operatorIdFromMccMnc('61607'), 'celtiis');
+    });
+
+    test('ignore les codes inconnus ou vides', () {
+      expect(operatorIdFromMccMnc(null), isNull);
+      expect(operatorIdFromMccMnc(''), isNull);
+      expect(operatorIdFromMccMnc('61604'), isNull);
+    });
+  });
+
   group('UssdService.buildFromTemplate', () {
     test('builds a parameterized code without PIN', () {
       final template = '*880*1*1*{numero}*{montant}#';

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:async';
 import 'dart:io';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../models/catalog_model.dart';
 import '../models/history_item.dart';
@@ -66,11 +65,9 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   Future<void> _loadPersonalization() async {
     final favorites = await UserPreferencesService.instance.favorites();
     String? detected;
-    if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
-      if (await Permission.phone.isGranted) {
-        final names = (await AndroidUssdGateway().getSims()).map((sim) => '${sim.label} ${sim.operatorName ?? ''}'.toLowerCase()).join(' ');
-        detected = names.contains('mtn') ? 'mtn' : names.contains('moov') ? 'moov' : names.contains('celtiis') ? 'celtiis' : null;
-      }
+    if (!kIsWeb && Platform.isAndroid) {
+      final mccMnc = await AndroidUssdGateway().simOperator();
+      detected = operatorIdFromMccMnc(mccMnc);
     }
     if (mounted) setState(() { _favorites = favorites; _detectedOperator = detected; });
   }
