@@ -57,3 +57,33 @@ vérifiez la réponse USSD. Avec deux SIM, vérifiez le choix et sa mémorisatio
 l’autorisation pour confirmer l’ouverture du composeur prérempli. Testez enfin un
 service à paramètres ajouté au JSON distant : validation du numéro béninois, montant
 positif, aperçu et choix de contact facultatif.
+
+Checklist complète : [`docs/TEST_TELEPHONE.md`](docs/TEST_TELEPHONE.md).
+
+## Signature release (Android)
+
+Le build release est signé avec un keystore de production **hors du dépôt**
+(`%USERPROFILE%\keystores\unione-release.jks`), lu via `android/key.properties`
+(jamais commité, déjà dans `.gitignore`).
+
+Commande de build de l'APK signé :
+
+```bash
+flutter build apk --release \
+  --dart-define=UNIONE_CODES_URL=https://votre-api.example/ussd-codes.json \
+  --dart-define=UNIONE_CATALOGS_URL=https://votre-api.example/v1/catalogs
+```
+
+Sans `android/key.properties`, le build retombe sur la signature debug.
+
+### Sauvegarde du keystore (critique)
+
+- **Perdre le keystore ou ses mots de passe = impossibilité de publier une mise à
+  jour** (Google Play refusera tout APK signé différemment).
+- Copier `unione-release.jks` et le mot de passe (stocké dans
+  `unione-release.password.txt`) sur au moins deux supports chiffrés distincts
+  (clé USB chiffrée + coffre cloud chiffré), et enregistrer le mot de passe dans
+  un gestionnaire de mots de passe (Bitwarden, 1Password…).
+- Ne jamais committer `key.properties`, `*.jks` ou `*.keystore` (couverts par
+  `.gitignore`).
+- Armure du certificat à conserver aussi : `keytool -exportcert -keystore unione-release.jks -alias unione -rfc`.
