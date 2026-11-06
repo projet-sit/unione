@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../models/catalog_model.dart';
 import '../models/history_item.dart';
 import '../models/menu_node.dart';
 import '../models/reseau.dart';
@@ -13,9 +14,11 @@ import '../services/history_service.dart';
 import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/offer_confirmation_sheet.dart';
 import '../widgets/reseau_card.dart';
 import '../widgets/skeleton_loader.dart';
 import 'action_screen.dart';
+import 'catalog_screen.dart';
 import 'menu_screen.dart';
 import 'settings_screen.dart';
 
@@ -74,8 +77,30 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     _loadPersonalization();
   }
 
-  Future<void> _openAction(String id) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => ActionScreen(nodeId: id)));
+  Future<void> _openNode(MenuNode node, OperatorTree operator) async {
+    if (node.type == MenuNodeType.catalog) {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CatalogScreen(
+            catalogId: node.catalogId ?? node.id,
+            title: node.label,
+          ),
+        ),
+      );
+    } else {
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ActionScreen(nodeId: node.id)));
+    }
+    _loadPersonalization();
+  }
+
+  Future<void> _openOffer(CatalogModel catalog, OfferModel offer, OperatorTree operator) async {
+    await OfferConfirmationSheet.show(
+      context,
+      catalog: catalog,
+      offer: offer,
+      operator: operator,
+    );
     _loadPersonalization();
   }
 
@@ -99,24 +124,108 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
         }
         final query = _search.text.trim().toLowerCase();
         final operators = [...tree.operators]..sort((a, b) => a.id == _detectedOperator ? -1 : b.id == _detectedOperator ? 1 : 0);
-        final actions = tree.actions.toList(growable: false);
-        final results = query.isEmpty ? const <MenuNode>[] : actions.where((node) => [node.label, node.category ?? '', ...node.keywords].join(' ').toLowerCase().contains(query)).toList();
-        final favorites = actions.where((node) => _favorites.contains(node.id)).toList();
+        final searchableNodes = tree.searchableNodes.toList(growable: false);
+        final results = query.isEmpty ? const <MenuNode>[] : searchableNodes.where((node) => [node.label, node.category ?? '', ...node.keywords].join(' ').toLowerCase().contains(query)).toList();
+        final favorites = searchableNodes.where((node) => _favorites.contains(node.id)).toList();
         final recentIds = _recent.map((item) => item.serviceId!).toSet();
-        final recents = actions.where((node) => recentIds.contains(node.id)).toList();
-        return Scaffold(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 20, 24, 36), children: [
-            _header(), const SizedBox(height: 28),
-            TextField(controller: _search, decoration: InputDecoration(hintText: 'Rechercher : solde, forfait, internet…', prefixIcon: const Icon(Icons.search_rounded), suffixIcon: query.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: _search.clear), filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none))),
-            const SizedBox(height: 28),
-            if (query.isNotEmpty) ...[_title('Résultats'), _actionList(tree, results, empty: 'Aucune feuille ne correspond à votre recherche.')] else ...[
-              if (favorites.isNotEmpty) ...[_title('Favoris'), _actionList(tree, favorites)],
-              if (recents.isNotEmpty) ...[_title('Récents'), _actionList(tree, recents)],
-              _title('Veuillez sélectionner un réseau :'),
-              ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), isDetected: operator.id == _detectedOperator, onTap: () => _openOperator(operator)))),
-            ],
-          ])),
+        final recents = searchableNodes.where((node) => recentIds.contains(node.id)).toList();
+
+        return ValueListenableBuilder<CatalogsData?>(
+          valueListenable: CodesRepository.instance.catalogs,
+          builder: (context, catalogsData, _) {
+            final matchingOffers = <_OfferSearchResult>[];
+            if (query.isNotEmpty && catalogsData != null) {
+              for (final cat in catalogsData.catalogs.values) {
+                final op = tree.operators.firstWhere(
+                  (o) => o.id.toLowerCase() == cat.operator.toLowerCase(),
+                  orElse: () => tree.operators.first,
+                );
+                for (final off in cat.offers) {
+                  final searchBlob = [
+                    off.title,
+                    '${off.price}',
+                    '${off.price} fcfa',
+                    off.validityLabel ?? '',
+                    ...off.badges,
+                    ...off.contents,
+                    cat.label,
+                    op.name,
+                  ].join(' ').toLowerCase();
+
+                  if (searchBlob.contains(query)) {
+                    matchingOffers.add(_OfferSearchResult(
+                      catalog: cat,
+                      offer: off,
+                      operator: op,
+                    ));
+                  }
+                }
+              }
+            }
+
+            final hasResults = results.isNotEmpty || matchingOffers.isNotEmpty;
+
+            return Scaffold(
+              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 20, 24, 36), children: [
+                _header(), const SizedBox(height: 28),
+                TextField(
+                  controller: _search,
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher : solde, forfait, 1 Go, 500, illimité…',
+                    prefixIcon: const Icon(Icons.search_rounded),
+                    suffixIcon: query.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: _search.clear),
+                    filled: true,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                  ),
+                ),
+                const SizedBox(height: 28),
+                if (query.isNotEmpty) ...[
+                  _title('Résultats'),
+                  if (!hasResults)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 24),
+                      child: Text('Aucun service ni forfait ne correspond à votre recherche.'),
+                    ),
+                  if (matchingOffers.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'FORFAITS (${matchingOffers.length})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    _offerResultsList(matchingOffers),
+                  ],
+                  if (results.isNotEmpty) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        'SERVICES & CATALOGUES (${results.length})',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Theme.of(context).colorScheme.primary,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                    _actionList(tree, results),
+                  ],
+                ] else ...[
+                  if (favorites.isNotEmpty) ...[_title('Favoris'), _actionList(tree, favorites)],
+                  if (recents.isNotEmpty) ...[_title('Récents'), _actionList(tree, recents)],
+                  _title('Veuillez sélectionner un réseau :'),
+                  ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), isDetected: operator.id == _detectedOperator, onTap: () => _openOperator(operator)))),
+                ],
+              ])),
+            );
+          },
         );
       },
     ),
@@ -135,19 +244,91 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
           final operator = tree.operatorFor(node.id)!;
           final path = tree.breadcrumb(node.id).map((item) => item.label).toList()..removeLast();
           final subtitle = [operator.name, ...path].join(' › ');
+          final isCatalog = node.type == MenuNodeType.catalog;
+
           return Semantics(
             label: '${node.label}, $subtitle. Appuyez pour accéder.',
             button: true,
             excludeSemantics: true,
             child: Card(child: ListTile(
-              onTap: () => _openAction(node.id),
-              leading: CircleAvatar(backgroundColor: operator.color.withValues(alpha: .12), child: Icon(menuIconFor(node.icon), color: operator.color)),
+              onTap: () => _openNode(node, operator),
+              leading: CircleAvatar(
+                backgroundColor: operator.color.withValues(alpha: .12),
+                child: Icon(menuIconFor(node.icon), color: operator.color),
+              ),
               title: Text(node.label, style: const TextStyle(fontWeight: FontWeight.w800)),
               subtitle: Text(subtitle),
-              trailing: const Icon(Icons.chevron_right_rounded),
+              trailing: isCatalog
+                  ? Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: operator.color.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'CATALOGUE',
+                        style: TextStyle(
+                          color: operator.color,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    )
+                  : const Icon(Icons.chevron_right_rounded),
             )),
           );
         }).toList()));
 
+  Widget _offerResultsList(List<_OfferSearchResult> matches) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 26),
+      child: Column(
+        children: matches.map((match) {
+          final title = match.offer.title == 'à confirmer' ? 'Forfait à confirmer' : match.offer.title;
+          final subtitle = '${match.catalog.label} · ${match.operator.name}${match.offer.validityLabel != null ? ' · ${match.offer.validityLabel}' : ''}';
+
+          return Semantics(
+            label: '$title, ${match.offer.price} FCFA, $subtitle. Appuyez pour confirmer et activer.',
+            button: true,
+            excludeSemantics: true,
+            child: Card(
+              child: ListTile(
+                onTap: () => _openOffer(match.catalog, match.offer, match.operator),
+                leading: CircleAvatar(
+                  backgroundColor: match.operator.color.withValues(alpha: .15),
+                  child: Icon(Icons.shopping_bag_outlined, color: match.operator.color),
+                ),
+                title: Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                subtitle: Text(subtitle),
+                trailing: Text(
+                  '${match.offer.price} F',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    color: match.operator.color,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Reseau _toReseau(OperatorTree operator) => Reseau(type: switch (operator.id) { 'mtn' => ReseauType.mtn, 'moov' => ReseauType.moov, _ => ReseauType.celtiis }, nom: operator.name, couleur: operator.color, logoLabel: operator.name.toUpperCase());
+}
+
+class _OfferSearchResult {
+  final CatalogModel catalog;
+  final OfferModel offer;
+  final OperatorTree operator;
+  const _OfferSearchResult({
+    required this.catalog,
+    required this.offer,
+    required this.operator,
+  });
 }

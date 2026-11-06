@@ -7,6 +7,7 @@ import '../widgets/logos/celtiis_logo.dart';
 import '../widgets/logos/moov_logo.dart';
 import '../widgets/logos/mtn_logo.dart';
 import 'action_screen.dart';
+import 'catalog_screen.dart';
 import 'selection_reseau_screen.dart';
 
 /// Affiche n'importe quel nœud de type menu du catalogue JSON.
@@ -106,9 +107,14 @@ class _MenuScreenState extends State<MenuScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => child.type == MenuNodeType.menu
-                              ? MenuScreen(nodeId: child.id)
-                              : ActionScreen(nodeId: child.id),
+                          builder: (_) => switch (child.type) {
+                            MenuNodeType.menu => MenuScreen(nodeId: child.id),
+                            MenuNodeType.catalog => CatalogScreen(
+                                catalogId: child.catalogId ?? child.id,
+                                title: child.label,
+                              ),
+                            MenuNodeType.action => ActionScreen(nodeId: child.id),
+                          },
                         ),
                       );
                     },
