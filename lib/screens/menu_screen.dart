@@ -6,7 +6,7 @@ import '../services/codes_repository.dart';
 import '../widgets/logos/celtiis_logo.dart';
 import '../widgets/logos/moov_logo.dart';
 import '../widgets/logos/mtn_logo.dart';
-import 'action_screen.dart';
+import '../widgets/service_launcher.dart';
 import 'catalog_screen.dart';
 import 'selection_reseau_screen.dart';
 
@@ -104,19 +104,31 @@ class _MenuScreenState extends State<MenuScreen> {
                     onTap: () {
                       HapticFeedback.selectionClick();
                       final child = visibleChildren[index];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => switch (child.type) {
-                            MenuNodeType.menu => MenuScreen(nodeId: child.id),
-                            MenuNodeType.catalog => CatalogScreen(
+                      switch (child.type) {
+                        case MenuNodeType.menu:
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => MenuScreen(nodeId: child.id),
+                            ),
+                          );
+                        case MenuNodeType.catalog:
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CatalogScreen(
                                 catalogId: child.catalogId ?? child.id,
                                 title: child.label,
                               ),
-                            MenuNodeType.action => ActionScreen(nodeId: child.id),
-                          },
-                        ),
-                      );
+                            ),
+                          );
+                        case MenuNodeType.action:
+                          ServiceLauncher.launchNode(
+                            context,
+                            node: child,
+                            operator: operator,
+                          );
+                      }
                     },
                   ),
                 ),

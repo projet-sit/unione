@@ -33,4 +33,15 @@ class UserPreferencesService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt('last_sim_$operatorId');
   }
+
+  /// Option de paiement mémorisée pour un catalogue (ex. Crédit / MoMo).
+  Future<String?> catalogPayment(String catalogId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('catalog_payment_$catalogId');
+  }
+
+  Future<void> saveCatalogPayment(String catalogId, String optionId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('catalog_payment_$catalogId', optionId);
+  }
 }

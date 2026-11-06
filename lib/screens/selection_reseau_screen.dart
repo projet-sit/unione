@@ -14,10 +14,9 @@ import '../services/history_service.dart';
 import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
-import '../widgets/offer_confirmation_sheet.dart';
 import '../widgets/reseau_card.dart';
+import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
-import 'action_screen.dart';
 import 'catalog_screen.dart';
 import 'menu_screen.dart';
 import 'settings_screen.dart';
@@ -86,20 +85,14 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
           ),
         ),
       );
+      _loadPersonalization();
     } else {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => ActionScreen(nodeId: node.id)));
+      await ServiceLauncher.launchNode(context, node: node, operator: operator);
     }
-    _loadPersonalization();
   }
 
   Future<void> _openOffer(CatalogModel catalog, OfferModel offer, OperatorTree operator) async {
-    await OfferConfirmationSheet.show(
-      context,
-      catalog: catalog,
-      offer: offer,
-      operator: operator,
-    );
-    _loadPersonalization();
+    await ServiceLauncher.launchOffer(context, catalog: catalog, offer: offer, operator: operator);
   }
 
   @override
@@ -283,7 +276,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
           final subtitle = '${match.catalog.label} · ${match.operator.name}${match.offer.validityLabel != null ? ' · ${match.offer.validityLabel}' : ''}';
 
           return Semantics(
-            label: '$title, ${match.offer.price} FCFA, $subtitle. Appuyez pour confirmer et activer.',
+            label: '$title, ${match.offer.price} FCFA, $subtitle. Appuyez pour lancer l’activation.',
             button: true,
             excludeSemantics: true,
             child: Card(

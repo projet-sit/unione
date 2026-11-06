@@ -4,7 +4,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../models/catalog_model.dart';
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
-import '../widgets/offer_confirmation_sheet.dart';
+import '../services/user_preferences_service.dart';
+import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
 import 'selection_reseau_screen.dart';
 
@@ -180,11 +181,18 @@ Version de l’app : 1.0.0+2''';
                             .toList()
                           ..sort((a, b) => a.price.compareTo(b.price));
 
-                        return ListView(
-                          key: PageStorageKey<String>('catalog_${widget.catalogId}_${tab.id}'),
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          children: [
-                            if (isOutdated)
+                         return ListView(
+                           key: PageStorageKey<String>('catalog_${widget.catalogId}_${tab.id}'),
+                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                           children: [
+                             // Sélecteur de mode de paiement attribuant (Crédit / MoMo)
+                             if (catalog.payWith.length > 1)
+                               Padding(
+                                 padding: const EdgeInsets.only(bottom: 14),
+                                 child: _PaymentSelector(catalog: catalog),
+                               ),
+
+                             if (isOutdated)
                               Container(
                                 margin: const EdgeInsets.only(bottom: 14),
                                 padding: const EdgeInsets.all(12),
@@ -212,7 +220,7 @@ Version de l’app : 1.0.0+2''';
                               catalog: catalog,
                               operator: operator,
                               isBestValue: offer.id == bestOfferId,
-                              onTap: () => OfferConfirmationSheet.show(
+                              onTap: () => ServiceLauncher.launchOffer(
                                 context,
                                 catalog: catalog,
                                 offer: offer,
@@ -503,6 +511,82 @@ class _OfferCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Sélecteur persistant du mode de paiement (ex. Crédit principal / Moov Money).
+/// Le choix est mémorisé par catalogue et appliqué au lancement direct des offres.
+class _PaymentSelector extends StatefulWidget {
+  final CatalogModel catalog;
+  const _PaymentSelector({required this.catalog});
+
+  @override
+  State<_PaymentSelector> createState() => _PaymentSelectorState();
+}
+
+class _PaymentSelectorState extends State<_PaymentSelector> {
+  String? _selectedId;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final saved = await UserPreferencesService.instance
+        .catalogPayment(widget.catalog.id);
+    final options = widget.catalog.payWith;
+    final valid = options.where((option) => option.id == saved).toList();
+    final initial = valid.isNotEmpty ? saved : (options.isNotEmpty ? options.first.id : null);
+    if (mounted && initial != _selectedId) {
+      setState(() => _selectedId = initial);
+    }
+  }
+
+  Future<void> _select(String optionId) async {
+    setState(() => _selectedId = optionId);
+    await ServiceLauncher.savePaymentOption(
+      catalogId: widget.catalog.id,
+      optionId: optionId,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.payments_outlined,
+            size: 18,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 4,
+              children: widget.catalog.payWith.map((option) {
+                final isSelected = option.id == _selectedId;
+                return ChoiceChip(
+                  label: Text(option.label),
+                  selected: isSelected,
+                  onSelected: (_) => _select(option.id),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ),
     );
   }
