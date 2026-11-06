@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/theme_service.dart';
 import '../widgets/info_bottom_sheet.dart';
+import '../widgets/share_sheet.dart';
 import 'history_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -175,7 +176,7 @@ class SettingsScreen extends StatelessWidget {
               context: context,
               icon: Icons.share,
               title: 'share'.tr(),
-              onTap: () => _showShareSheet(context),
+              onTap: () => UnioneShareSheet.show(context),
             ),
           ]),
           const SizedBox(height: 24),
@@ -267,7 +268,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showThemeDialog(BuildContext context) {    showDialog(
+  void _showThemeDialog(BuildContext context) {
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -285,7 +287,10 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.light_mode_outlined),
               title: Text('light'.tr()),
               trailing: themeNotifier.themeMode == ThemeMode.light
-                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
                   : null,
               onTap: () {
                 themeNotifier.setThemeMode(ThemeMode.light);
@@ -296,7 +301,10 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.dark_mode_outlined),
               title: Text('dark'.tr()),
               trailing: themeNotifier.themeMode == ThemeMode.dark
-                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
                   : null,
               onTap: () {
                 themeNotifier.setThemeMode(ThemeMode.dark);
@@ -307,7 +315,10 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.brightness_auto_outlined),
               title: Text('system'.tr()),
               trailing: themeNotifier.themeMode == ThemeMode.system
-                  ? Icon(Icons.check, color: Theme.of(context).colorScheme.primary)
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
                   : null,
               onTap: () {
                 themeNotifier.setThemeMode(ThemeMode.system);
@@ -449,22 +460,6 @@ class SettingsScreen extends StatelessWidget {
               ],
             );
           },
-        );
-      },
-    );
-  }
-
-  void _showShareSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) {
-        return InfoBottomSheet(
-          title: 'share_title'.tr(),
-          subtitle: 'UNIONE App',
-          content: 'share_desc'.tr(),
-          icon: Icons.share_rounded,
         );
       },
     );
