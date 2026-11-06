@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/history_item.dart';
 import '../services/history_service.dart';
@@ -604,10 +603,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ],
             ),
           ),
-        )
-        .animate()
-        .fadeIn(duration: 400.ms)
-        .slideX(begin: 0.1, curve: Curves.easeOut);
+        );
   }
 
   Widget _buildEmptyState() {

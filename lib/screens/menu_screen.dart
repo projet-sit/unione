@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
@@ -113,7 +112,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         ),
                       );
                     },
-                  ).animate().fadeIn(delay: (index * 40).ms, duration: 280.ms).scale(begin: const Offset(.95, .95)),
+                  ),
                 ),
               ),
             ],

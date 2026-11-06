@@ -5,7 +5,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:secure_application/secure_application.dart';
 import 'package:local_session_timeout/local_session_timeout.dart';
 import 'theme/app_theme.dart';
-import 'screens/splash_screen.dart';
+import 'screens/selection_reseau_screen.dart';
 import 'services/security_service.dart';
 import 'services/codes_repository.dart';
 import 'services/theme_service.dart';
@@ -56,7 +56,7 @@ class ZapApp extends StatelessWidget {
                   opacity: 0.9,
                   lockedBuilder: (context, notifier) =>
                       _buildLockedScreen(notifier),
-                  child: const SplashScreen(),
+                  child: const SelectionReseauScreen(),
                 ),
               );
             },

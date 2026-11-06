@@ -32,7 +32,6 @@ dependencies:
     sdk: flutter
   url_launcher: ^6.3.1
   google_fonts: ^8.1.0
-  flutter_animate: ^4.5.0
   local_auth: ^3.0.1
   secure_application: ^4.1.0
 

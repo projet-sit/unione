@@ -71,6 +71,13 @@ class AppTheme {
       ),
       elevation: 0,
     ),
+
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: SoberPageTransitionsBuilder(),
+        TargetPlatform.iOS: SoberPageTransitionsBuilder(),
+      },
+    ),
   );
 
   // Thème clair global (Principalement utilisé)
@@ -133,5 +140,33 @@ class AppTheme {
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
       ),
     ),
+
+    pageTransitionsTheme: const PageTransitionsTheme(
+      builders: {
+        TargetPlatform.android: SoberPageTransitionsBuilder(),
+        TargetPlatform.iOS: SoberPageTransitionsBuilder(),
+      },
+    ),
   );
+}
+
+class SoberPageTransitionsBuilder extends PageTransitionsBuilder {
+  const SoberPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    return FadeTransition(
+      opacity: CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOut,
+      ),
+      child: child,
+    );
+  }
 }
