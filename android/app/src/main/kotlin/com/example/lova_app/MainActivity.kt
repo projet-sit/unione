@@ -62,6 +62,9 @@ class MainActivity : FlutterActivity() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun sendUssd(manager: TelephonyManager, code: String, result: MethodChannel.Result) {
+        // sendUssdRequest affiche automatiquement le dialogue USSD natif
+        // d'Android (menu opérateur, champ de saisie, Annuler/Envoyer) :
+        // la première réponse remonte uniquement ici pour confirmer l'envoi.
         try {
             manager.sendUssdRequest(code, object : TelephonyManager.UssdResponseCallback() {
                 override fun onReceiveUssdResponse(telephonyManager: TelephonyManager, request: String, response: CharSequence) {

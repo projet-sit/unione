@@ -38,6 +38,12 @@ class UssdService {
     }
   }
 
+  /// Lance un code USSD via `TelephonyManager.sendUssdRequest` (Android 8+).
+  ///
+  /// Le premier callback `onReceiveUssdResponse` ne sert qu'à confirmer
+  /// l'envoi et à noter l'opération dans l'historique : l'affichage et
+  /// l'interaction (menu opérateur, champ de réponse, Annuler/Envoyer) sont
+  /// gérés par le dialogue USSD natif d'Android, jamais par un écran Flutter.
   static Future<bool> launchUssd(
     BuildContext context,
     String code, {
@@ -80,7 +86,9 @@ class UssdService {
       if (!Platform.isAndroid) {
         final launched = await _openDialer(encodedCode);
         if (launched) await _logLaunch(title, network, serviceId);
-        if (!launched && context.mounted) _showFailure(context, 'launch_failed'.tr());
+        if (!launched && context.mounted) {
+          _showFailure(context, 'launch_failed'.tr());
+        }
         return launched;
       }
       final permissionGranted = await _requestPhonePermission(context);
@@ -96,11 +104,10 @@ class UssdService {
         );
         if (result?.success == true) {
           await _logLaunch(title, network, serviceId);
-          if (context.mounted &&
-              result!.response != null &&
-              result.response!.trim().isNotEmpty) {
-            await _showResponse(context, result.response!);
-          }
+          // La réponse, le menu de l'opérateur et la saisie de réponse sont
+          // affichés par le dialogue USSD natif d'Android (fenêtre système
+          // avec champ de saisie et boutons Annuler/Envoyer) : aucun écran
+          // Flutter ne doit être présenté par-dessus.
           return true;
         }
         if (result != null && result.error != null && context.mounted) {
@@ -135,18 +142,23 @@ class UssdService {
   }) async {
     final launched = await _openDialer(number.trim());
     if (launched) await _logLaunch(title, network, serviceId);
-    if (!launched && context.mounted) _showFailure(context, 'launch_failed'.tr());
+    if (!launched && context.mounted) {
+      _showFailure(context, 'launch_failed'.tr());
+    }
     return launched;
   }
 
-  static Future<void> _logLaunch(String? title, String? network, String? serviceId) =>
-      _historyService.logEvent(
-        title: title ?? 'Opération USSD',
-        description: 'history_ussd_executed',
-        network: network,
-        serviceId: serviceId,
-        type: HistoryType.ussdLaunch,
-      );
+  static Future<void> _logLaunch(
+    String? title,
+    String? network,
+    String? serviceId,
+  ) => _historyService.logEvent(
+    title: title ?? 'Opération USSD',
+    description: 'history_ussd_executed',
+    network: network,
+    serviceId: serviceId,
+    type: HistoryType.ussdLaunch,
+  );
 
   static Future<bool> _requestPhonePermission(BuildContext context) async {
     if (await Permission.phone.isGranted) return true;
@@ -224,27 +236,6 @@ class UssdService {
     return launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  static Future<void> _showResponse(BuildContext context, String response) =>
-      showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (sheetContext) => Padding(
-          padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Réponse USSD',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 14),
-              SelectableText(response),
-            ],
-          ),
-        ),
-      );
-
   static String _readableError(String error) {
     final normalized = error.toLowerCase();
     if (normalized.contains('service') || normalized.contains('network')) {
@@ -273,7 +264,9 @@ class UssdService {
       finalCode = finalCode.replaceAll('{$key}', value.trim());
     });
     finalCode = finalCode.replaceAll(RegExp(r'\s+'), '');
-    if (finalCode.contains('{{') || RegExp(r'\{[^}]+\}').hasMatch(finalCode)) return '';
+    if (finalCode.contains('{{') || RegExp(r'\{[^}]+\}').hasMatch(finalCode)) {
+      return '';
+    }
     return finalCode;
   }
 
