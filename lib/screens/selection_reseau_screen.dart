@@ -214,7 +214,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                 ] else ...[
                   if (favorites.isNotEmpty) ...[_title('Favoris'), _actionList(tree, favorites)],
                   _title('Veuillez sélectionner un réseau :'),
-                  ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), isDetected: operator.id == _detectedOperator, onTap: () => _openOperator(operator)))),
+                  ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), onTap: () => _openOperator(operator)))),
                 ],
               ])),
             );

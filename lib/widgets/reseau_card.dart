@@ -5,13 +5,11 @@ import 'operator_logo.dart';
 class ReseauCard extends StatelessWidget {
   final Reseau reseau;
   final VoidCallback onTap;
-  final bool isDetected;
 
   const ReseauCard({
     super.key,
     required this.reseau,
     required this.onTap,
-    this.isDetected = false,
   });
 
   @override
@@ -20,9 +18,7 @@ class ReseauCard extends StatelessWidget {
     final accent = OperatorLogo.accent(context, reseau.couleur);
 
     // Libellé sémantique complet pour l'accessibilité.
-    final semanticLabel = isDetected
-        ? '${reseau.nom}, réseau détecté. Appuyez pour sélectionner.'
-        : '${reseau.nom}. Appuyez pour sélectionner.';
+    final semanticLabel = '${reseau.nom}. Appuyez pour sélectionner.';
 
     return Semantics(
       label: semanticLabel,
@@ -106,17 +102,6 @@ class ReseauCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (isDetected) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            'Réseau détecté',
-                            style: TextStyle(
-                              color: accent,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
