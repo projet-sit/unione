@@ -3,9 +3,11 @@ import 'package:flutter/services.dart';
 
 import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
+import '../services/user_preferences_service.dart';
 import '../widgets/logos/celtiis_logo.dart';
 import '../widgets/logos/moov_logo.dart';
 import '../widgets/logos/mtn_logo.dart';
+import '../widgets/operation_menu_sheet.dart';
 import '../widgets/service_launcher.dart';
 import 'catalog_screen.dart';
 import 'selection_reseau_screen.dart';
@@ -98,39 +100,54 @@ class _MenuScreenState extends State<MenuScreen> {
                     childAspectRatio: 1,
                   ),
                   itemCount: visibleChildren.length,
-                  itemBuilder: (context, index) => _NodeCard(
-                    node: visibleChildren[index],
-                    color: operator.color,
-                    onTap: () {
-                      HapticFeedback.selectionClick();
-                      final child = visibleChildren[index];
-                      switch (child.type) {
-                        case MenuNodeType.menu:
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => MenuScreen(nodeId: child.id),
-                            ),
-                          );
-                        case MenuNodeType.catalog:
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => CatalogScreen(
-                                catalogId: child.catalogId ?? child.id,
-                                title: child.label,
+                  itemBuilder: (context, index) {
+                    final child = visibleChildren[index];
+                    return _NodeCard(
+                      node: child,
+                      color: operator.color,
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        switch (child.type) {
+                          case MenuNodeType.menu:
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => MenuScreen(nodeId: child.id),
                               ),
-                            ),
-                          );
-                        case MenuNodeType.action:
-                          ServiceLauncher.launchNode(
-                            context,
-                            node: child,
-                            operator: operator,
-                          );
-                      }
-                    },
-                  ),
+                            );
+                          case MenuNodeType.catalog:
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => CatalogScreen(
+                                  catalogId: child.catalogId ?? child.id,
+                                  title: child.label,
+                                ),
+                              ),
+                            );
+                          case MenuNodeType.action:
+                            ServiceLauncher.launchNode(
+                              context,
+                              node: child,
+                              operator: operator,
+                            );
+                        }
+                      },
+                      onLongPress: child.type == MenuNodeType.menu
+                          ? null
+                          : () async {
+                              final favorites = await UserPreferencesService.instance.favorites();
+                              if (!context.mounted) return;
+                              await OperationMenuSheet.show(
+                                context,
+                                node: child,
+                                operator: operator,
+                                tree: tree,
+                                favorite: favorites.contains(child.id),
+                              );
+                            },
+                    );
+                  },
                 ),
               ),
             ],
@@ -179,7 +196,8 @@ class _NodeCard extends StatelessWidget {
   final MenuNode node;
   final Color color;
   final VoidCallback onTap;
-  const _NodeCard({required this.node, required this.color, required this.onTap});
+  final VoidCallback? onLongPress;
+  const _NodeCard({required this.node, required this.color, required this.onTap, this.onLongPress});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -192,6 +210,7 @@ class _NodeCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: BorderRadius.circular(24),
         child: Padding(
           padding: const EdgeInsets.all(16),

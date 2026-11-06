@@ -14,6 +14,7 @@ import '../services/history_service.dart';
 import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
+import '../widgets/operation_menu_sheet.dart';
 import '../widgets/reseau_card.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
@@ -240,6 +241,13 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
             excludeSemantics: true,
             child: Card(child: ListTile(
               onTap: () => _openNode(node, operator),
+              onLongPress: () async {
+                final result = await OperationMenuSheet.show(context, node: node, operator: operator, tree: tree, favorite: _favorites.contains(node.id));
+                if (result == null) return;
+                setState(() {
+                  result ? _favorites.add(node.id) : _favorites.remove(node.id);
+                });
+              },
               leading: CircleAvatar(
                 backgroundColor: operator.color.withValues(alpha: .12),
                 child: Icon(menuIconFor(node.icon), color: operator.color),
