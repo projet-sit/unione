@@ -56,17 +56,19 @@ class OperatorLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: ColoredBox(
           color: tileColor(operatorId),
-          child: Transform.scale(
-            scale: zoom,
-            child: Image.asset(
-              assetPath,
-              width: size * 0.82,
-              height: size * 0.82,
-              fit: BoxFit.contain,
-              gaplessPlayback: true,
-              filterQuality: FilterQuality.high,
-            ),
-          ),
+              child: Transform.scale(
+                scale: zoom,
+                child: Image.asset(
+                  assetPath,
+                  width: size * 0.82,
+                  height: size * 0.82,
+                  fit: BoxFit.contain,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.high,
+                  cacheWidth: (size * 0.82).toInt(),
+                  cacheHeight: (size * 0.82).toInt(),
+                ),
+              ),
         ),
       ),
     );

@@ -210,112 +210,119 @@ class _CatalogScreenState extends State<CatalogScreen>
                                 .toList()
                               ..sort((a, b) => a.price.compareTo(b.price));
 
-                        return ListView(
-                          key: PageStorageKey<String>(
-                            'catalog_${widget.catalogId}_${tab.id}',
-                          ),
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          children: [
-                            // Sélecteur de mode de paiement attribuant (Crédit / MoMo)
-                            if (catalog.payWith.length > 1)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 14),
-                                child: _PaymentSelector(catalog: catalog),
-                              ),
-
-                            if (isOutdated)
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 14),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.amber.shade700.withValues(
-                                      alpha: 0.4,
-                                    ),
+                        final List<Widget> items = [];
+                        if (catalog.payWith.length > 1) {
+                          items.add(
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 14),
+                              child: _PaymentSelector(catalog: catalog),
+                            ),
+                          );
+                        }
+                        if (isOutdated) {
+                          items.add(
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 14),
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: Colors.amber.shade700.withValues(
+                                    alpha: 0.4,
                                   ),
                                 ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.warning_amber_rounded,
-                                      color: Colors.amber.shade800,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    const Expanded(
-                                      child: Text(
-                                        'Ces tarifs peuvent avoir changé récemment.',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
-
-                            ...tabOffers.map(
-                              (offer) => _OfferCard(
-                                offer: offer,
-                                catalog: catalog,
-                                operator: operator,
-                                isBestValue: offer.id == bestOfferId,
-                                onTap: () => ServiceLauncher.launchOffer(
-                                  context,
-                                  catalog: catalog,
-                                  offer: offer,
-                                  operator: operator,
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(height: 20),
-                            // Fraîcheur des tarifs & Signalement
-                            Center(
-                              child: Column(
+                              child: Row(
                                 children: [
-                                  if (catalog.verifiedAt != null)
-                                    Text(
-                                      'Tarifs mis à jour le ${catalog.verifiedAt}',
+                                  Icon(
+                                    Icons.warning_amber_rounded,
+                                    color: Colors.amber.shade800,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Expanded(
+                                    child: Text(
+                                      'Ces tarifs peuvent avoir changé récemment.',
                                       style: TextStyle(
-                                        fontSize: 12,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.5),
+                                        fontSize: 13,
                                         fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  const SizedBox(height: 6),
-                                  TextButton.icon(
-                                    style: TextButton.styleFrom(
-                                      foregroundColor: operatorColor,
-                                      visualDensity: VisualDensity.compact,
-                                    ),
-                                    onPressed: () => _reportIncorrectTariff(
-                                      context: context,
-                                      operatorName: operator.name,
-                                      catalogLabel: catalog.label,
-                                      verifiedAt: catalog.verifiedAt,
-                                    ),
-                                    icon: const Icon(
-                                      Icons.report_problem_outlined,
-                                      size: 16,
-                                    ),
-                                    label: const Text(
-                                      'Signaler un tarif incorrect',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                          ],
+                          );
+                        }
+                        items.addAll(
+                          tabOffers.map(
+                            (offer) => _OfferCard(
+                              offer: offer,
+                              catalog: catalog,
+                              operator: operator,
+                              isBestValue: offer.id == bestOfferId,
+                              onTap: () => ServiceLauncher.launchOffer(
+                                context,
+                                catalog: catalog,
+                                offer: offer,
+                                operator: operator,
+                              ),
+                            ),
+                          ),
+                        );
+                        items.add(const SizedBox(height: 20));
+                        items.add(
+                          Center(
+                            child: Column(
+                              children: [
+                                if (catalog.verifiedAt != null)
+                                  Text(
+                                    'Tarifs mis à jour le ${catalog.verifiedAt}',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.5),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                const SizedBox(height: 6),
+                                TextButton.icon(
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: operatorColor,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  onPressed: () => _reportIncorrectTariff(
+                                    context: context,
+                                    operatorName: operator.name,
+                                    catalogLabel: catalog.label,
+                                    verifiedAt: catalog.verifiedAt,
+                                  ),
+                                  icon: const Icon(
+                                    Icons.report_problem_outlined,
+                                    size: 16,
+                                  ),
+                                  label: const Text(
+                                    'Signaler un tarif incorrect',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+
+                        return ListView.builder(
+                          key: PageStorageKey<String>(
+                            'catalog_${widget.catalogId}_${tab.id}',
+                          ),
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                          itemCount: items.length,
+                          itemBuilder: (context, index) => items[index],
                         );
                       }).toList(),
                     ),
