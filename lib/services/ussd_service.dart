@@ -96,12 +96,6 @@ class UssdService {
           subscriptionId: sim?.subscriptionId,
         );
         if (result?.success == true) {
-          if (sim != null && operatorId != null) {
-            await UserPreferencesService.instance.saveLastSim(
-              operatorId,
-              sim.subscriptionId,
-            );
-          }
           await _logLaunch(title, network, serviceId);
           if (context.mounted &&
               result!.response != null &&
@@ -189,9 +183,32 @@ class UssdService {
     if (sims.length < 2) {
       return (sim: sims.isEmpty ? null : sims.first, cancelled: false);
     }
-    final lastId = operatorId == null
-        ? null
-        : await UserPreferencesService.instance.lastSim(operatorId);
+    // 1. Carte détectée pour cet opérateur (nom d'opérateur de la SIM).
+    final keyword = switch (operatorId) {
+      'mtn' => 'mtn',
+      'moov' => 'moov',
+      'celtiis' => 'celtiis',
+      _ => null,
+    };
+    if (keyword != null) {
+      for (final sim in sims) {
+        final name = '${sim.label} ${sim.operatorName ?? ''}'.toLowerCase();
+        if (name.contains(keyword)) {
+          return (sim: sim, cancelled: false);
+        }
+      }
+    }
+    // 2. Carte mémorisée pour cet opérateur, si toujours active.
+    if (operatorId != null) {
+      final lastId =
+          await UserPreferencesService.instance.lastSim(operatorId);
+      for (final sim in sims) {
+        if (sim.subscriptionId == lastId) {
+          return (sim: sim, cancelled: false);
+        }
+      }
+    }
+    // 3. Aucune correspondance : on demande une fois et on mémorise.
     if (!context.mounted) return (sim: null, cancelled: true);
     final selected = await showModalBottomSheet<SimCard>(
       context: context,
@@ -217,9 +234,6 @@ class UssdService {
                 subtitle: sim.operatorName == null
                     ? null
                     : Text(sim.operatorName!),
-                trailing: sim.subscriptionId == lastId
-                    ? const Text('Dernier choix')
-                    : null,
                 onTap: () => Navigator.pop(sheetContext, sim),
               ),
             ),
@@ -228,6 +242,10 @@ class UssdService {
         ),
       ),
     );
+    if (selected != null && operatorId != null) {
+      await UserPreferencesService.instance
+          .saveLastSim(operatorId, selected.subscriptionId);
+    }
     return (sim: selected, cancelled: selected == null);
   }
 

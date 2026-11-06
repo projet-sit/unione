@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../services/android_ussd_gateway.dart';
 import '../services/theme_service.dart';
+import '../services/user_preferences_service.dart';
 import '../widgets/info_bottom_sheet.dart';
 import 'history_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
+
+  static const _simOperators = <({String id, String name})>[
+    (id: 'mtn', name: 'MTN'),
+    (id: 'moov', name: 'Moov Africa'),
+    (id: 'celtiis', name: 'Celtiis'),
+  ];
 
   Future<void> _launchWhatsApp() async {
     final Uri whatsappUri = Uri.parse("https://wa.me/22991831317");
@@ -54,6 +62,18 @@ class SettingsScreen extends StatelessWidget {
                 },
                 onTap: () => _showThemeDialog(context),
               ),
+            ),
+          ]),
+
+          const SizedBox(height: 24),
+          _buildSectionTitle(context, 'Réseau'),
+          _buildSettingsCard(context, [
+            _buildSettingTile(
+              context: context,
+              icon: Icons.sim_card_outlined,
+              title: 'SIM par défaut',
+              subtitle: 'Choix de carte pour MTN, Moov Africa et Celtiis',
+              onTap: () => _showDefaultSimSheet(context),
             ),
           ]),
 
@@ -260,8 +280,16 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showThemeDialog(BuildContext context) {
-    showDialog(
+  Future<void> _showDefaultSimSheet(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (_) => const _DefaultSimSheet(),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context) {    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -536,6 +564,136 @@ class SettingsScreen extends StatelessWidget {
       height: 1,
       indent: 60,
       endIndent: 16,
+    );
+  }
+}
+
+/// Feuille de réglage de la SIM par défaut, opérateur par opérateur.
+/// Le choix est mémorisé puis appliqué automatiquement aux lancements USSD.
+class _DefaultSimSheet extends StatefulWidget {
+  const _DefaultSimSheet();
+
+  @override
+  State<_DefaultSimSheet> createState() => _DefaultSimSheetState();
+}
+
+class _DefaultSimSheetState extends State<_DefaultSimSheet> {
+  List<SimCard> _sims = const [];
+  bool _loaded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSims();
+  }
+
+  Future<void> _loadSims() async {
+    _sims = await AndroidUssdGateway().getSims();
+    if (mounted) setState(() => _loaded = true);
+  }
+
+  Future<({String label, int? subscriptionId})?> _savedFor(String operatorId) async {
+    final savedId = await UserPreferencesService.instance.lastSim(operatorId);
+    if (savedId == null) return null;
+    final sim = _sims.where((item) => item.subscriptionId == savedId).firstOrNull;
+    return (label: sim?.label ?? 'Carte SIM', subscriptionId: savedId);
+  }
+
+  Future<void> _pickFor(String operatorId) async {
+    if (_sims.isEmpty) return;
+    final selected = await showModalBottomSheet<SimCard>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+              child: Text(
+                'SIM par défaut — ${SettingsScreen._simOperators.firstWhere((item) => item.id == operatorId).name}',
+                style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+              ),
+            ),
+            ..._sims.map(
+              (sim) => ListTile(
+                leading: const Icon(Icons.sim_card_rounded),
+                title: Text(sim.label),
+                subtitle: sim.operatorName == null ? null : Text(sim.operatorName!),
+                onTap: () => Navigator.pop(sheetContext, sim),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.block_rounded),
+              title: const Text('Aucune préférence'),
+              onTap: () => Navigator.pop<SimCard>(sheetContext, null),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+    if (selected != null) {
+      await UserPreferencesService.instance
+          .saveLastSim(operatorId, selected.subscriptionId);
+    } else {
+      await UserPreferencesService.instance.clearLastSim(operatorId);
+    }
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: ListView(
+        shrinkWrap: true,
+        children: [
+          const Padding(
+            padding: EdgeInsets.fromLTRB(24, 8, 24, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'SIM par défaut',
+                  style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  'Carte utilisée automatiquement pour chaque opérateur, double SIM uniquement.',
+                  style: TextStyle(fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          if (!_loaded)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (_sims.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(24),
+              child: Text(
+                'Aucune carte SIM active n’a été détectée. Ce réglage sert aux téléphones avec double SIM.',
+              ),
+            )
+          else
+            ...SettingsScreen._simOperators.map((item) => FutureBuilder<({String label, int? subscriptionId})?>(
+                  future: _savedFor(item.id),
+                  builder: (context, snapshot) => ListTile(
+                    leading: const Icon(Icons.sim_card_outlined),
+                    title: Text(item.name),
+                    subtitle: Text(snapshot.data?.label ?? 'Aucune définie (détection auto)'),
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => _pickFor(item.id),
+                  ),
+                )),
+          const SizedBox(height: 12),
+        ],
+      ),
     );
   }
 }
