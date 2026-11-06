@@ -36,3 +36,8 @@ ios/Runner/GeneratedPluginRegistrant.swift
 # OS files
 .DS_Store
 Thumbs.db
+
+# Backend Node.js
+server/node_modules/
+server/.env
+
