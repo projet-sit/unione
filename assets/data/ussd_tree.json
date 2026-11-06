@@ -3,7 +3,7 @@
   "updatedAt": "2026-11-06",
   "operators": [
     {
-      "id": "mtn", "name": "MTN", "country": "Bénin", "color": "#FFCC00", "rootCode": "*199#",
+      "id": "mtn", "name": "MTN", "country": "Bénin", "color": "#FFCB05", "rootCode": "*199#",
       "children": [
         {"id":"mtn_solde","type":"action","label":"Solde principal","icon":"bank","category":"solde","keywords":["solde","crédit"],"description":"Consulte votre solde principal MTN.","code":"*126#","params":[],"financial":false,"status":"ok","confidence":"low","source":"code-existant-app","alt":"*123#","notes":"Le code embarqué est prioritaire. La table de référence associe *123# au portail forfaits et le signale comme contradictoire."},
         {"id":"mtn_momo","type":"menu","label":"MTN MoMo","icon":"wallet","category":"mobile_money","keywords":["momo","argent","paiement"],"status":"ok","confidence":"high","children":[
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "id": "moov", "name": "Moov Africa", "country": "Bénin", "color": "#007EB8", "rootCode": "*199#",
+      "id": "moov", "name": "Moov Africa", "country": "Bénin", "color": "#005CC3", "rootCode": "*199#",
       "children": [
         {"id":"moov_solde","type":"action","label":"Solde principal","icon":"bank","category":"solde","keywords":["solde","crédit"],"description":"Consulte votre solde Moov Africa.","code":"*104#","params":[],"financial":false,"status":"ok","confidence":"high","source":"moov-officiel","alt":null,"notes":""},
         {"id":"moov_money","type":"menu","label":"Moov Money","icon":"wallet","category":"mobile_money","keywords":["money","argent","paiement"],"status":"ok","confidence":"high","children":[
@@ -60,7 +60,7 @@
       ]
     },
     {
-      "id": "celtiis", "name": "Celtiis", "country": "Bénin", "color": "#0A1F5C", "rootCode": "*199#",
+      "id": "celtiis", "name": "Celtiis", "country": "Bénin", "color": "#173A73", "rootCode": "*199#",
       "children": [
         {"id":"celtiis_solde","type":"action","label":"Solde principal","icon":"bank","category":"solde","keywords":["solde","crédit","top appel"],"description":"Consulte le solde crédit, Top Appel ou My Mix.","code":"*104*1*1#","params":[],"financial":false,"status":"ok","confidence":"medium","source":"code-existant-app","alt":null,"notes":"Code existant conservé ; à tester sur SIM."},
         {"id":"celtiis_cash","type":"menu","label":"Celtiis Cash","icon":"wallet","category":"mobile_money","keywords":["cash","argent","paiement"],"status":"ok","confidence":"high","children":[

@@ -32,6 +32,14 @@ class OperatorLogo extends StatelessWidget {
   static Color tileColor(String operatorId) =>
       _tileColors[operatorId] ?? const Color(0xFF2563EB);
 
+  /// Couleur de marque ajustée pour rester lisible : en mode sombre, les
+  /// marques à fond sombre (Celtiis, Moov) sont éclaircies vers le blanc.
+  static Color accent(BuildContext context, Color brand) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    if (!isDark || brand.computeLuminance() >= 0.2) return brand;
+    return Color.lerp(brand, Colors.white, 0.45)!;
+  }
+
   @override
   Widget build(BuildContext context) {
     final assetPath = _assets[operatorId];

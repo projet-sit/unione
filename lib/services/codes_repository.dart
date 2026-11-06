@@ -14,7 +14,7 @@ class CodesRepository {
   CodesRepository._();
   static final CodesRepository instance = CodesRepository._();
 
-  static const _cacheKey = 'ussd_tree_v4';
+  static const _cacheKey = 'ussd_tree_v5';
   static const _catalogsCacheKey = 'catalogs_v1';
   static const String remoteUrl = String.fromEnvironment('UNIONE_CODES_URL');
   static const String remoteCatalogsUrl = String.fromEnvironment('UNIONE_CATALOGS_URL');

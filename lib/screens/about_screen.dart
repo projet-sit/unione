@@ -105,7 +105,7 @@ class AboutScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: colorScheme.primary.withValues(alpha: 0.1)),
       ),

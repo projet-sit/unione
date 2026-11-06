@@ -22,7 +22,7 @@ void main() {
 
     test('cleans corrupted cache and falls back to bundled tree', () async {
       SharedPreferences.setMockInitialValues({
-        'ussd_tree_v4': '{"invalid": json}',
+        'ussd_tree_v5': '{"invalid": json}',
       });
 
       final repository = CodesRepository.instance;
@@ -31,7 +31,7 @@ void main() {
       expect(repository.catalogue.value, isNotNull);
       expect(repository.catalogue.value!.operators, isNotEmpty);
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.containsKey('ussd_tree_v4'), isFalse);
+      expect(prefs.containsKey('ussd_tree_v5'), isFalse);
     });
 
     test('decodes valid cached tree when present', () async {
@@ -62,7 +62,7 @@ void main() {
       });
 
       SharedPreferences.setMockInitialValues({
-        'ussd_tree_v4': validJson,
+        'ussd_tree_v5': validJson,
       });
 
       final repository = CodesRepository.instance;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/reseau.dart';
+import 'operator_logo.dart';
 
 class ReseauCard extends StatelessWidget {
   final Reseau reseau;
@@ -16,6 +17,7 @@ class ReseauCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final onSurfaceColor = Theme.of(context).colorScheme.onSurface;
+    final accent = OperatorLogo.accent(context, reseau.couleur);
 
     // Libellé sémantique complet pour l'accessibilité.
     final semanticLabel = isDetected
@@ -91,13 +93,13 @@ class ReseauCard extends StatelessWidget {
                             vertical: 4,
                           ),
                           decoration: BoxDecoration(
-                            color: reseau.couleur.withValues(alpha: 0.1),
+                            color: accent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             'Bénin',
                             style: TextStyle(
-                              color: reseau.couleur,
+                              color: accent,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 1,
@@ -109,7 +111,7 @@ class ReseauCard extends StatelessWidget {
                           Text(
                             'Réseau détecté',
                             style: TextStyle(
-                              color: reseau.couleur,
+                              color: accent,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                             ),

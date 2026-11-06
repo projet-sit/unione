@@ -262,13 +262,13 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                   ? Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: operator.color.withValues(alpha: 0.15),
+                        color: OperatorLogo.accent(context, operator.color).withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         'CATALOGUE',
                         style: TextStyle(
-                          color: operator.color,
+                          color: OperatorLogo.accent(context, operator.color),
                           fontSize: 10,
                           fontWeight: FontWeight.w900,
                         ),
@@ -305,7 +305,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                   style: TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 15,
-                    color: match.operator.color,
+                    color: OperatorLogo.accent(context, match.operator.color),
                   ),
                 ),
               ),
