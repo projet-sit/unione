@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum MenuNodeType { menu, action }
+enum MenuNodeType { menu, action, catalog }
 
 class CodeParameter {
   final String key;
@@ -61,6 +61,7 @@ class MenuNode {
   final String? source;
   final String? alt;
   final String? notes;
+  final String? catalogId;
   final List<MenuNode> children;
 
   const MenuNode({
@@ -83,23 +84,28 @@ class MenuNode {
     this.source,
     this.alt,
     this.notes,
+    this.catalogId,
     this.children = const [],
   });
 
-  bool get isAvailable => type == MenuNodeType.action && code != null && status == 'ok';
+  bool get isAvailable =>
+      (type == MenuNodeType.action && code != null && status == 'ok') ||
+      (type == MenuNodeType.catalog && catalogId != null && status == 'ok');
 
   factory MenuNode.fromJson(Map<String, dynamic> json) {
-    final id = json['id']?.toString() ?? '';
+    final catalogId = json['catalogId']?.toString();
+    final id = json['id']?.toString() ?? catalogId ?? '';
     final rawType = json['type']?.toString();
     final type = switch (rawType) {
       'menu' => MenuNodeType.menu,
       'action' => MenuNodeType.action,
+      'catalog' => MenuNodeType.catalog,
       _ => null,
     };
     final label = json['label']?.toString() ?? '';
     final icon = json['icon']?.toString() ?? 'dialpad';
-    final status = json['status']?.toString() ?? '';
-    final confidence = json['confidence']?.toString() ?? '';
+    final status = json['status']?.toString() ?? 'ok';
+    final confidence = json['confidence']?.toString() ?? 'high';
     final rawChildren = json['children'];
     final rawParams = json['params'];
     if (id.isEmpty || type == null || label.isEmpty ||
@@ -138,6 +144,9 @@ class MenuNode {
     if (type == MenuNodeType.action && (children.isNotEmpty || (code == null && status != 'a_verifier'))) {
       throw const FormatException('Action USSD invalide.');
     }
+    if (type == MenuNodeType.catalog && (catalogId == null || catalogId.isEmpty || children.isNotEmpty)) {
+      throw const FormatException('Nœud catalogue USSD invalide.');
+    }
     return MenuNode(
       id: id,
       type: type,
@@ -158,6 +167,7 @@ class MenuNode {
       source: json['source']?.toString(),
       alt: json['alt']?.toString(),
       notes: json['notes']?.toString(),
+      catalogId: catalogId,
       children: children,
     );
   }
@@ -243,6 +253,8 @@ class UssdTree {
   MenuNode? node(String id) => _nodes[id];
   OperatorTree? operatorFor(String id) => _operatorByNode[id];
   Iterable<MenuNode> get actions => _nodes.values.where((node) => node.type == MenuNodeType.action);
+  Iterable<MenuNode> get catalogs => _nodes.values.where((node) => node.type == MenuNodeType.catalog);
+  Iterable<MenuNode> get searchableNodes => _nodes.values.where((node) => node.type == MenuNodeType.action || node.type == MenuNodeType.catalog);
 
   List<MenuNode> breadcrumb(String id) {
     final result = <MenuNode>[];

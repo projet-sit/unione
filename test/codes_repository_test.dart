@@ -72,5 +72,36 @@ void main() {
       expect(repository.catalogue.value!.version, 99);
       expect(repository.catalogue.value!.node('mtn_solde_custom'), isNotNull);
     });
+
+    test('initializes and decodes bundled catalogs correctly', () async {
+      SharedPreferences.setMockInitialValues({});
+      final repository = CodesRepository.instance;
+      await repository.initialize();
+
+      expect(repository.catalogs.value, isNotNull);
+      final catalogsData = repository.catalogs.value!;
+      expect(catalogsData.version, greaterThanOrEqualTo(1));
+      expect(catalogsData.catalogs.length, greaterThanOrEqualTo(10));
+
+      final celtiisConnect = repository.getCatalog('celtiis_connect');
+      expect(celtiisConnect, isNotNull);
+      expect(celtiisConnect!.operator, 'celtiis');
+      expect(celtiisConnect.tabs, isNotEmpty);
+      expect(celtiisConnect.offers, isNotEmpty);
+      expect(celtiisConnect.launch.mode, 'menu');
+      expect(celtiisConnect.launch.code, '*199*2#');
+      expect(celtiisConnect.bestValueOfferId, isNotNull);
+
+      final mtnIllimite = repository.getCatalog('mtn_illimite');
+      expect(mtnIllimite, isNotNull);
+      expect(mtnIllimite!.payWith, isNotEmpty);
+      expect(mtnIllimite.payWith.first.id, 'airtime');
+      expect(mtnIllimite.payWith.last.id, 'momo');
+
+      final foundOffer = repository.findOffer('celtiis_connect_500');
+      expect(foundOffer, isNotNull);
+      expect(foundOffer!.price, 500);
+      expect(foundOffer.title, '1 Go');
+    });
   });
 }
