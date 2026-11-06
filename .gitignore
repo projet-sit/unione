@@ -31,6 +31,11 @@ ios/Runner/GeneratedPluginRegistrant.swift
 .env.*
 !.env.example
 
+# Images brutes à la racine : les sources vivent hors dépôt ou dans assets/
+## Logos officiels : ~/Desktop/UNIONE-logos-sources
+/*.jpeg
+/*.jpg
+
 # IDE
 .idea/
 .vscode/
