@@ -1,5 +1,7 @@
 # UNIONE
 
+[![CI](https://github.com/<ORG>/unione/actions/workflows/ci.yml/badge.svg)](https://github.com/<ORG>/unione/actions/workflows/ci.yml)
+
 Assistant USSD intelligent pour le Bénin.
 
 UNIONE regroupe les actions USSD courantes pour MTN, MOOV et Celtiis : solde,
@@ -12,6 +14,17 @@ les données locales de l'application.
 flutter analyze
 flutter test
 ```
+
+## CI/CD
+
+Le workflow [`.github/workflows/ci.yml`](.github/workflows/ci.yml) s'exécute automatiquement
+sur chaque push et Pull Request vers `main` / `develop` :
+
+1. **`dart format`** — vérifie que le code est formaté.
+2. **`flutter analyze --fatal-infos`** — aucune erreur ou avertissement tolérée.
+3. **`flutter test --reporter=expanded`** — tous les tests unitaires et widget doivent passer.
+
+> Les artefacts de test sont conservés 7 jours en cas d'échec.
 
 ## Catalogue USSD distant
 

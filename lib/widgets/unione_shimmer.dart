@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class UnioneShimmer extends StatefulWidget {
@@ -25,8 +27,10 @@ class _UnioneShimmerState extends State<UnioneShimmer>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration)
-      ..repeat();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
+      _controller.repeat();
+    }
   }
 
   @override

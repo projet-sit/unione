@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/history_item.dart';
 import '../services/history_service.dart';
+import '../widgets/skeleton_loader.dart';
 
 /// Écran affichant l'historique complet des actions de l'utilisateur.
 /// Permet de filtrer par texte, par réseau et par date.
@@ -19,6 +20,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   List<HistoryItem> _history = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  static const int _pageSize = 20;
+
   String? _selectedNetwork;
   DateTime? _selectedDate;
 
@@ -29,7 +34,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   Future<void> _loadHistory() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _hasMore = true;
+    });
     final history = await _historyService.getHistory(
       query: _searchController.text,
       network: _selectedNetwork,
@@ -37,11 +45,38 @@ class _HistoryScreenState extends State<HistoryScreen> {
       endDate: _selectedDate?.add(
         const Duration(hours: 23, minutes: 59, seconds: 59),
       ),
+      limit: _pageSize,
+      offset: 0,
     );
-    setState(() {
-      _history = history;
-      _isLoading = false;
-    });
+    if (mounted) {
+      setState(() {
+        _history = history;
+        _isLoading = false;
+        _hasMore = history.length == _pageSize;
+      });
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() => _isLoadingMore = true);
+    final more = await _historyService.getHistory(
+      query: _searchController.text,
+      network: _selectedNetwork,
+      startDate: _selectedDate,
+      endDate: _selectedDate?.add(
+        const Duration(hours: 23, minutes: 59, seconds: 59),
+      ),
+      limit: _pageSize,
+      offset: _history.length,
+    );
+    if (mounted) {
+      setState(() {
+        _history.addAll(more);
+        _isLoadingMore = false;
+        _hasMore = more.length == _pageSize;
+      });
+    }
   }
 
   void _confirmClearHistory() {
@@ -117,13 +152,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           _buildFilters(),
           Expanded(
             child: _isLoading
-                ? Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  )
+                ? _buildSkeletonList()
                 : _history.isEmpty
                 ? _buildEmptyState()
                 : _buildHistoryList(),
@@ -230,49 +259,62 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final isSelected = onClear != null;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? colorScheme.primary.withValues(alpha: 0.1)
-              : colorScheme.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
+    final hint = isSelected ? 'Appuyez pour changer, filtre actif : $label' : label;
+    return Semantics(
+      label: hint,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
             color: isSelected
-                ? colorScheme.primary
-                : Colors.black.withValues(alpha: 0.05),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 16, color: colorScheme.primary),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
+                ? colorScheme.primary.withValues(alpha: 0.1)
+                : colorScheme.surface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary
+                  : Colors.black.withValues(alpha: 0.05),
             ),
-            if (onClear != null)
-              GestureDetector(
-                onTap: onClear,
-                child: Icon(
-                  Icons.close_rounded,
-                  size: 16,
-                  color: colorScheme.primary,
+          ),
+          child: Row(
+            children: [
+              ExcludeSemantics(
+                child: Icon(icon, size: 16, color: colorScheme.primary),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isSelected
+                        ? colorScheme.primary
+                        : colorScheme.onSurface.withValues(alpha: 0.7),
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-          ],
+              if (onClear != null)
+                Semantics(
+                  label: 'Effacer le filtre',
+                  button: true,
+                  child: GestureDetector(
+                    onTap: onClear,
+                    child: ExcludeSemantics(
+                      child: Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -355,6 +397,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Affiche un skeleton animé pendant le chargement de l'historique.
+  Widget _buildSkeletonList() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(24),
+      itemCount: 5,
+      itemBuilder: (_, _) => const SkeletonHistoryCard(),
+    );
+  }
+
   Widget _buildHistoryList() {
     _history.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
@@ -375,9 +426,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       } else if (itemDate == yesterday) {
         header = "yesterday".tr();
       } else {
+        String localeStr;
+        try {
+          localeStr = context.locale.toString();
+        } catch (_) {
+          localeStr = 'fr_FR';
+        }
         header = DateFormat(
           'dd MMMM yyyy',
-          context.locale.toString(),
+          localeStr,
         ).format(itemDate);
       }
 
@@ -389,8 +446,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(24),
-      itemCount: groupedHistory.length,
+      itemCount: groupedHistory.length + (_hasMore ? 1 : 0),
       itemBuilder: (context, index) {
+        // Dernier item = bouton "Charger plus"
+        if (index == groupedHistory.length) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Center(
+              child: _isLoadingMore
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : TextButton.icon(
+                      onPressed: _loadMore,
+                      icon: const Icon(Icons.expand_more_rounded),
+                      label: const Text('Charger plus'),
+                    ),
+            ),
+          );
+        }
         final header = groupedHistory.keys.elementAt(index);
         final items = groupedHistory[header]!;
 
@@ -425,98 +501,108 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Widget _buildHistoryCard(HistoryItem item) {
     final colorScheme = Theme.of(context).colorScheme;
     final typeColor = _getTypeColor(item.type);
+    final timeStr = DateFormat('HH:mm').format(item.timestamp);
+    final networkPart = item.network != null ? ', réseau ${item.network}' : '';
+    final semanticLabel =
+        '${item.title.tr()}, ${_getLocalizedDescription(item)}$networkPart, à $timeStr';
 
-    return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: colorScheme.surface,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.02),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: typeColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(16),
+    return Semantics(
+          label: semanticLabel,
+          excludeSemantics: true,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
-                child: Icon(
-                  _getTypeIcon(item.type),
-                  color: typeColor,
-                  size: 24,
+              ],
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ExcludeSemantics(
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: typeColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      _getTypeIcon(item.type),
+                      color: typeColor,
+                      size: 24,
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item.title.tr(),
-                          style: TextStyle(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            item.title.tr(),
+                            style: TextStyle(
+                              color: colorScheme.onSurface,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
                           ),
+                          Text(
+                            timeStr,
+                            style: TextStyle(
+                              color: colorScheme.onSurface.withValues(alpha: 0.4),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        _getLocalizedDescription(item),
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          fontSize: 14,
+                          height: 1.4,
+                          fontWeight: FontWeight.w500,
                         ),
-                        Text(
-                          DateFormat('HH:mm').format(item.timestamp),
-                          style: TextStyle(
-                            color: colorScheme.onSurface.withValues(alpha: 0.4),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                      ),
+                      if (item.network != null) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            item.network!,
+                            style: TextStyle(
+                              color: colorScheme.primary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      _getLocalizedDescription(item),
-                      style: TextStyle(
-                        color: colorScheme.onSurface.withValues(alpha: 0.6),
-                        fontSize: 14,
-                        height: 1.4,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (item.network != null) ...[
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          item.network!,
-                          style: TextStyle(
-                            color: colorScheme.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
                     ],
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         )
         .animate()

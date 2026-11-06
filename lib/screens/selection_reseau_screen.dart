@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'dart:async';
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../models/history_item.dart';
@@ -12,6 +14,7 @@ import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/reseau_card.dart';
+import '../widgets/skeleton_loader.dart';
 import 'action_screen.dart';
 import 'menu_screen.dart';
 import 'settings_screen.dart';
@@ -55,9 +58,11 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     final favorites = await UserPreferencesService.instance.favorites();
     final recent = await _history.getHistory();
     String? detected;
-    if (await Permission.phone.isGranted) {
-      final names = (await AndroidUssdGateway().getSims()).map((sim) => '${sim.label} ${sim.operatorName ?? ''}'.toLowerCase()).join(' ');
-      detected = names.contains('mtn') ? 'mtn' : names.contains('moov') ? 'moov' : names.contains('celtiis') ? 'celtiis' : null;
+    if (!kIsWeb && !Platform.environment.containsKey('FLUTTER_TEST')) {
+      if (await Permission.phone.isGranted) {
+        final names = (await AndroidUssdGateway().getSims()).map((sim) => '${sim.label} ${sim.operatorName ?? ''}'.toLowerCase()).join(' ');
+        detected = names.contains('mtn') ? 'mtn' : names.contains('moov') ? 'moov' : names.contains('celtiis') ? 'celtiis' : null;
+      }
     }
     if (mounted) setState(() { _favorites = favorites; _recent = recent.where((item) => item.type == HistoryType.ussdLaunch && item.serviceId != null).take(4).toList(); _detectedOperator = detected; });
   }
@@ -80,7 +85,18 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     builder: (context, _) => ValueListenableBuilder<UssdTree?>(
       valueListenable: CodesRepository.instance.catalogue,
       builder: (context, tree, _) {
-        if (tree == null) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        if (tree == null) {
+          return Scaffold(body: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(24, 20, 24, 36), children: [
+            _header(), const SizedBox(height: 28),
+            const SkeletonBox(height: 52, borderRadius: 18),
+            const SizedBox(height: 28),
+            const SkeletonBox(height: 20, width: 180, borderRadius: 6),
+            const SizedBox(height: 20),
+            const SkeletonReseauCard(),
+            const SkeletonReseauCard(),
+            const SkeletonReseauCard(),
+          ])));
+        }
         final query = _search.text.trim().toLowerCase();
         final operators = [...tree.operators]..sort((a, b) => a.id == _detectedOperator ? -1 : b.id == _detectedOperator ? 1 : 0);
         final actions = tree.actions.toList(growable: false);
@@ -118,13 +134,19 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
       : Padding(padding: const EdgeInsets.only(bottom: 26), child: Column(children: nodes.map((node) {
           final operator = tree.operatorFor(node.id)!;
           final path = tree.breadcrumb(node.id).map((item) => item.label).toList()..removeLast();
-          return Card(child: ListTile(
-            onTap: () => _openAction(node.id),
-            leading: CircleAvatar(backgroundColor: operator.color.withValues(alpha: .12), child: Icon(menuIconFor(node.icon), color: operator.color)),
-            title: Text(node.label, style: const TextStyle(fontWeight: FontWeight.w800)),
-            subtitle: Text([operator.name, ...path].join(' › ')),
-            trailing: const Icon(Icons.chevron_right_rounded),
-          ));
+          final subtitle = [operator.name, ...path].join(' › ');
+          return Semantics(
+            label: '${node.label}, $subtitle. Appuyez pour accéder.',
+            button: true,
+            excludeSemantics: true,
+            child: Card(child: ListTile(
+              onTap: () => _openAction(node.id),
+              leading: CircleAvatar(backgroundColor: operator.color.withValues(alpha: .12), child: Icon(menuIconFor(node.icon), color: operator.color)),
+              title: Text(node.label, style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(subtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+            )),
+          );
         }).toList()));
 
   Reseau _toReseau(OperatorTree operator) => Reseau(type: switch (operator.id) { 'mtn' => ReseauType.mtn, 'moov' => ReseauType.moov, _ => ReseauType.celtiis }, nom: operator.name, couleur: operator.color, logoLabel: operator.name.toUpperCase());

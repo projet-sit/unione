@@ -22,6 +22,34 @@ class HistoryService {
     return _database!;
   }
 
+  /// Permet d'injecter ou d'initialiser une base SQLite en mémoire pour les tests.
+  static void setDatabaseForTesting(Database? db) {
+    _database = db;
+  }
+
+  /// Initialise une base de données SQLite en mémoire isolée pour les tests.
+  static Future<Database> initInMemoryDatabase() async {
+    final db = await openDatabase(
+      inMemoryDatabasePath,
+      version: 2,
+      onCreate: (db, version) {
+        return db.execute('''
+          CREATE TABLE history(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            description TEXT,
+            timestamp TEXT,
+            network TEXT,
+            service_id TEXT,
+            type INTEGER
+          )
+          ''');
+      },
+    );
+    _database = db;
+    return db;
+  }
+
   /// Initialise la base de données SQLite 'unione_history.db'.
   Future<Database> _initDatabase() async {
     String path = join(await getDatabasesPath(), 'unione_history.db');
@@ -77,13 +105,17 @@ class HistoryService {
     );
   }
 
-  /// Récupère la liste filtrée de l'historique.
+  /// Récupère la liste filtrée de l'historique avec pagination.
   /// Permet la recherche par texte, par réseau et par plage de dates.
+  /// [limit] : nombre maximum de résultats (défaut : tous).
+  /// [offset] : décalage pour la pagination (défaut : 0).
   Future<List<HistoryItem>> getHistory({
     String? query,
     String? network,
     DateTime? startDate,
     DateTime? endDate,
+    int? limit,
+    int offset = 0,
   }) async {
     final db = await database;
 
@@ -123,6 +155,8 @@ class HistoryService {
       where: whereClause.isEmpty ? null : whereClause,
       whereArgs: whereArgs.isEmpty ? null : whereArgs,
       orderBy: 'timestamp DESC',
+      limit: limit,
+      offset: offset > 0 ? offset : null,
     );
 
     // Conversion des résultats SQL en objets HistoryItem

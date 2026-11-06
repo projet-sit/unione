@@ -10,7 +10,10 @@ void _setupSqfliteFfi() {
 }
 
 void main() {
-  setUpAll(_setupSqfliteFfi);
+  setUpAll(() async {
+    _setupSqfliteFfi();
+    await HistoryService.initInMemoryDatabase();
+  });
 
   // Réinitialise l'instance singleton entre chaque test pour isoler les états.
   setUp(() async {
