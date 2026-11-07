@@ -88,11 +88,14 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   }
 
   Future<void> _openOperator(OperatorTree operator) async {
-    await _history.logEvent(
-      title: 'history_network_title',
-      description: 'history_network_selected|${operator.name}',
-      network: operator.name,
-      type: HistoryType.networkSelection,
+    // L'écriture d'historique ne bloque jamais le lancement : fire-and-forget.
+    unawaited(
+      _history.logEvent(
+        title: 'history_network_title',
+        description: 'history_network_selected|${operator.name}',
+        network: operator.name,
+        type: HistoryType.networkSelection,
+      ),
     );
     if (!mounted) return;
     await Navigator.push(

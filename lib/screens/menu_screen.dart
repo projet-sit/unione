@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -165,35 +166,42 @@ class _MenuScreenState extends State<MenuScreen> {
                       onFavorite: child.type == MenuNodeType.menu
                           ? null
                           : () => _toggleFavorite(child),
-                      onTap: () async {
-                        HapticFeedback.selectionClick();
+                      onTap: () {
+                        // Retour haptique immédiat, non bloquant.
+                        unawaited(HapticFeedback.selectionClick());
                         switch (child.type) {
                           case MenuNodeType.menu:
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => MenuScreen(nodeId: child.id),
-                              ),
-                            );
-                            _loadFavorites();
-                          case MenuNodeType.catalog:
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => CatalogScreen(
-                                  catalogId: child.catalogId ?? child.id,
-                                  title: child.label,
+                            unawaited(
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => MenuScreen(nodeId: child.id),
                                 ),
                               ),
                             );
-                            _loadFavorites();
-                          case MenuNodeType.action:
-                            await ServiceLauncher.launchNode(
-                              context,
-                              node: child,
-                              operator: operator,
+                            unawaited(_loadFavorites());
+                          case MenuNodeType.catalog:
+                            unawaited(
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CatalogScreen(
+                                    catalogId: child.catalogId ?? child.id,
+                                    title: child.label,
+                                  ),
+                                ),
+                              ),
                             );
-                            _loadFavorites();
+                            unawaited(_loadFavorites());
+                          case MenuNodeType.action:
+                            unawaited(
+                              ServiceLauncher.launchNode(
+                                context,
+                                node: child,
+                                operator: operator,
+                              ),
+                            );
+                            unawaited(_loadFavorites());
                         }
                       },
                       onLongPress: child.type == MenuNodeType.menu

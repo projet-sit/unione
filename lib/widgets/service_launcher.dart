@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../models/catalog_model.dart';
@@ -57,7 +58,10 @@ class ServiceLauncher {
         serviceId: node.id,
       );
       if (launched) {
-        await UserPreferencesService.instance.addRecent('n:${node.id}');
+        // L'écriture d'historique récente ne bloque pas l'UI.
+        unawaited(
+          UserPreferencesService.instance.addRecent('n:${node.id}'),
+        );
       }
     }
   }
@@ -100,8 +104,11 @@ class ServiceLauncher {
       serviceId: offer.id,
     );
     if (launched) {
-      await UserPreferencesService.instance.addRecent(
-        'o:${catalog.id}:${offer.id}',
+      // L'écriture d'historique récente ne bloque pas l'UI.
+      unawaited(
+        UserPreferencesService.instance.addRecent(
+          'o:${catalog.id}:${offer.id}',
+        ),
       );
     }
   }
