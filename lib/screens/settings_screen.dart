@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
+import '../services/device_info_service.dart';
 import '../services/whatsapp_launcher.dart';
 import '../widgets/info_bottom_sheet.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/share_sheet.dart';
+import 'help_screen.dart';
 import 'history_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -13,6 +15,18 @@ class SettingsScreen extends StatelessWidget {
 
   Future<void> _launchWhatsApp(BuildContext context, {String? message}) async {
     await WhatsAppLauncher.openWithFeedback(context, message: message);
+  }
+
+  Future<void> _reportProblem(BuildContext context) async {
+    final info = await DeviceInfoService().read();
+    if (!context.mounted) return;
+    await _launchWhatsApp(
+      context,
+      message: AppConfig.reportProblemMessage(
+        androidVersion: info.androidVersion,
+        model: info.model,
+      ),
+    );
   }
 
   @override
@@ -46,6 +60,13 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             _buildSectionTitle(context, 'security_legal'.tr()),
             _buildSettingsCard(context, [
+              _buildSettingTile(
+                context: context,
+                icon: Icons.security,
+                title: 'security'.tr(),
+                onTap: () => _showSecuritySheet(context),
+              ),
+              _buildDivider(context),
               _buildSettingTile(
                 context: context,
                 icon: Icons.privacy_tip_outlined,
@@ -90,17 +111,30 @@ class SettingsScreen extends StatelessWidget {
                 context: context,
                 icon: Icons.description_outlined,
                 title: 'terms'.tr(),
+                onTap: () => _showTermsSheet(context),
+              ),
+            ]),
+
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'assistance'.tr()),
+            _buildSettingsCard(context, [
+              _buildSettingTile(
+                context: context,
+                icon: Icons.report_problem_outlined,
+                title: 'report_problem'.tr(),
+                subtitle: 'report_problem_subtitle'.tr(),
+                onTap: () => _reportProblem(context),
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.help_outline_rounded,
+                title: 'help_faq'.tr(),
+                subtitle: 'help_faq_subtitle'.tr(),
                 onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    isScrollControlled: true,
-                    builder: (context) => InfoBottomSheet(
-                      title: 'terms_title'.tr(),
-                      subtitle: 'terms_subtitle'.tr(),
-                      content: 'terms_desc'.tr(),
-                      icon: Icons.description_outlined,
-                    ),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpScreen()),
                   );
                 },
               ),
@@ -127,6 +161,25 @@ class SettingsScreen extends StatelessWidget {
                       subtitle: 'Version ${AppConfig.appVersion}',
                       content: 'about_zoli_desc'.tr(),
                       icon: Icons.info_outline,
+                    ),
+                  );
+                },
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.code,
+                title: 'about_developer'.tr(),
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => InfoBottomSheet(
+                      title: 'about_developer'.tr(),
+                      subtitle: 'Ulrich IDOHOU',
+                      content: 'about_dev_desc'.tr(),
+                      icon: Icons.person,
                     ),
                   );
                 },
@@ -233,8 +286,42 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  void _showSecuritySheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return InfoBottomSheet(
+          title: 'security_title'.tr(),
+          subtitle: 'security_subtitle'.tr(),
+          content: 'security_desc'.tr(),
+          icon: Icons.security_rounded,
+        );
+      },
+    );
+  }
+
+  void _showTermsSheet(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        return InfoBottomSheet(
+          title: 'terms_title'.tr(),
+          subtitle: 'terms_subtitle'.tr(),
+          content: 'terms_desc'.tr(),
+          icon: Icons.description_outlined,
+        );
+      },
+    );
+  }
+
   void _showRateDialog(BuildContext context) => _rateApp(context);
 
+  /// Ouvre la fiche Play Store. Si le store n'est pas disponible (appareil sans
+  /// Play Store, build de test), bascule sur WhatsApp pour recueillir l'avis.
   Future<void> _rateApp(BuildContext context) async {
     final marketUri = Uri.parse('market://details?id=${AppConfig.packageId}');
     final storeUri = Uri.parse(AppConfig.playStoreUrl);
@@ -246,12 +333,16 @@ class SettingsScreen extends StatelessWidget {
         );
         if (opened) return;
       }
-    } catch (_) {}
+    } catch (_) {
+      // On tente le lien HTTPS ci-dessous.
+    }
     try {
       if (await launchUrl(storeUri, mode: LaunchMode.externalApplication)) {
         return;
       }
-    } catch (_) {}
+    } catch (_) {
+      // Repli WhatsApp.
+    }
     if (!context.mounted) return;
     await _launchWhatsApp(
       context,
