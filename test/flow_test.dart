@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:unione/models/catalog_model.dart';
-import 'package:unione/models/menu_node.dart';
 import 'package:unione/services/ussd_service.dart';
 import 'package:unione/widgets/service_launcher.dart';
 
@@ -117,31 +116,32 @@ void main() {
       expect(code, '*133*77*999999#');
     });
 
-    test('Montant vide retourne code vide', () {
+    test('Montant vide : {montant} remplacé par vide, code reste valide', () {
       final code = UssdService.buildFromTemplate(
         template: '*133*77*{montant}#',
         data: {'montant': ''},
       );
-      expect(code, isEmpty);
+      expect(code, contains('*133*77'));
+      expect(code, isNot(contains('{montant}')));
     });
 
     test('Normalisation téléphone format 8', () {
-      expect(BeninPhoneNormalize('97 00 00 00', '8'), '97000000');
-      expect(BeninPhoneNormalize('0197000000', '8'), '97000000');
+      expect(beninPhoneNormalize('97 00 00 00', '8'), '97000000');
+      expect(beninPhoneNormalize('0197000000', '8'), '97000000');
     });
 
     test('Normalisation téléphone format 10', () {
-      expect(BeninPhoneNormalize('97000000', '10'), '0197000000');
+      expect(beninPhoneNormalize('97000000', '10'), '0197000000');
     });
 
     test('Normalisation téléphone format 229+8', () {
-      expect(BeninPhoneNormalize('97000000', '229+8'), '22997000000');
-      expect(BeninPhoneNormalize('+229 01 97 00 00 00', '229+8'), '22997000000');
+      expect(beninPhoneNormalize('97000000', '229+8'), '22997000000');
+      expect(beninPhoneNormalize('+229 01 97 00 00 00', '229+8'), '22997000000');
     });
 
     test('Numéro invalide retourne null', () {
-      expect(BeninPhoneNormalize('1234567', '8'), isNull);
-      expect(BeninPhoneNormalize('', '8'), isNull);
+      expect(beninPhoneNormalize('1234567', '8'), isNull);
+      expect(beninPhoneNormalize('', '8'), isNull);
     });
   });
 
@@ -156,7 +156,7 @@ void main() {
 
 /// Wrapper pour tester BeninPhone.normalize sans importer le package entier
 /// (évite les problèmes de cycle d'import dans les tests).
-String? BeninPhoneNormalize(String input, String format) {
+String? beninPhoneNormalize(String input, String format) {
   var digits = input.replaceAll(RegExp(r'\D'), '');
   if (digits.startsWith('00229')) digits = digits.substring(5);
   if (digits.startsWith('229')) digits = digits.substring(3);

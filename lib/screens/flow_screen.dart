@@ -77,7 +77,7 @@ class _FlowScreenState extends State<FlowScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _BreadcrumbStep(current: _stepIndex + 1, total: _steps.length),
+            BreadcrumbStep(current: _stepIndex + 1, total: _steps.length),
             const SizedBox(height: 24),
             Text(
               step.label,
@@ -91,7 +91,7 @@ class _FlowScreenState extends State<FlowScreen> {
             Text(
               _stepHint(step),
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
             ),
@@ -154,7 +154,7 @@ class _FlowScreenState extends State<FlowScreen> {
       widgets.add(
         Card(
           margin: const EdgeInsets.only(bottom: 12),
-          color: isSelected ? operatorColor.withOpacity(0.1) : null,
+          color: isSelected ? operatorColor.withValues(alpha: 0.1) : null,
           child: ListTile(
             leading: Icon(
               isSelected ? Icons.check_circle_rounded : Icons.circle_outlined,
@@ -243,7 +243,7 @@ class _FlowScreenState extends State<FlowScreen> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: amounts.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, index2) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final amount = amounts[index];
           return ActionChip(
@@ -279,11 +279,6 @@ class _FlowScreenState extends State<FlowScreen> {
     ColorScheme colorScheme,
     Color operatorColor,
   ) {
-    final numeroParam = _selectedVariant()?.params
-        .where((p) => p.type == 'phone')
-        .firstOrNull;
-    final format = numeroParam?.format ?? '8';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -581,7 +576,7 @@ class _FlowScreenState extends State<FlowScreen> {
             Text(
               'Verifiez avant de valider.',
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
             ),
@@ -589,14 +584,14 @@ class _FlowScreenState extends State<FlowScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  _SummaryRow(
+                  SummaryRow(
                     label: 'Operation',
                     value: widget.node.label,
                     color: operatorColor,
                   ),
                   ..._buildSummaryRows(colorScheme),
                   if (code.isNotEmpty)
-                    _SummaryRow(
+                    SummaryRow(
                       label: 'Code USSD',
                       value: code,
                       color: operatorColor,
@@ -606,7 +601,7 @@ class _FlowScreenState extends State<FlowScreen> {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withOpacity(0.08),
+                      color: colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -621,7 +616,7 @@ class _FlowScreenState extends State<FlowScreen> {
                           child: Text(
                             'L operateur vous demandera votre code secret apres validation.',
                             style: TextStyle(
-                              color: colorScheme.onSurface.withOpacity(0.9),
+                              color: colorScheme.onSurface.withValues(alpha: 0.9),
                               fontSize: 13,
                             ),
                           ),
@@ -665,7 +660,7 @@ class _FlowScreenState extends State<FlowScreen> {
       final value = _answers[step.key] ?? '';
       if (value.isEmpty) continue;
       rows.add(
-        _SummaryRow(
+        SummaryRow(
           label: step.label,
           value: step.key == 'numero' ? _maskNumber(value) : value,
           color: Theme.of(context).colorScheme.primary,
@@ -779,10 +774,10 @@ class _FlowScreenState extends State<FlowScreen> {
   }
 }
 
-class _BreadcrumbStep extends StatelessWidget {
+class BreadcrumbStep extends StatelessWidget {
   final int current;
   final int total;
-  const _BreadcrumbStep({required this.current, required this.total});
+  const BreadcrumbStep({super.key, required this.current, required this.total});
 
   @override
   Widget build(BuildContext context) {
@@ -800,7 +795,7 @@ class _BreadcrumbStep extends StatelessWidget {
               decoration: BoxDecoration(
                 color: active
                     ? Theme.of(context).colorScheme.primary
-                    : colorScheme.onSurface.withOpacity(0.18),
+                    : colorScheme.onSurface.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
               ),
             ),
@@ -812,7 +807,7 @@ class _BreadcrumbStep extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: active
                       ? Theme.of(context).colorScheme.primary
-                      : colorScheme.onSurface.withOpacity(0.18),
+                      : colorScheme.onSurface.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -823,13 +818,14 @@ class _BreadcrumbStep extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
+class SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
   final bool isCode;
 
-  const _SummaryRow({
+  const SummaryRow({
+    super.key,
     required this.label,
     required this.value,
     required this.color,
@@ -849,7 +845,7 @@ class _SummaryRow extends StatelessWidget {
             child: Text(
               label,
               style: TextStyle(
-                color: colorScheme.onSurface.withOpacity(0.6),
+                color: colorScheme.onSurface.withValues(alpha: 0.6),
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
