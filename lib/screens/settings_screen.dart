@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../services/device_info_service.dart';
+import '../services/theme_service.dart';
 import '../services/whatsapp_launcher.dart';
 import '../widgets/info_bottom_sheet.dart';
 import '../widgets/responsive_layout.dart';
@@ -54,6 +55,20 @@ class SettingsScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (_) => const HistoryScreen()),
                   );
                 },
+              ),
+              ListenableBuilder(
+                listenable: themeNotifier,
+                builder: (context, _) => _buildSettingTile(
+                  context: context,
+                  icon: Icons.palette_outlined,
+                  title: 'theme'.tr(),
+                  subtitle: switch (themeNotifier.themeMode) {
+                    ThemeMode.light => 'light'.tr(),
+                    ThemeMode.dark => 'dark'.tr(),
+                    ThemeMode.system => 'system'.tr(),
+                  },
+                  onTap: () => _showThemeDialog(context),
+                ),
               ),
             ]),
 
@@ -281,6 +296,69 @@ class SettingsScreen extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void _showThemeDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
+          'theme_mode'.tr(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.light_mode_outlined),
+              title: Text('light'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.light
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.light);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.dark_mode_outlined),
+              title: Text('dark'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.dark
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.dark);
+                Navigator.pop(ctx);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.brightness_auto_outlined),
+              title: Text('system'.tr()),
+              trailing: themeNotifier.themeMode == ThemeMode.system
+                  ? Icon(
+                      Icons.check,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
+              onTap: () {
+                themeNotifier.setThemeMode(ThemeMode.system);
+                Navigator.pop(ctx);
+              },
+            ),
+          ],
         ),
       ),
     );
