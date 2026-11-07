@@ -9,7 +9,7 @@ import '../widgets/operation_menu_sheet.dart';
 import '../widgets/operator_logo.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
-import 'catalog_screen.dart';
+import 'flow_screen.dart';
 import 'selection_reseau_screen.dart';
 
 /// Affiche n'importe quel nœud de type menu du catalogue JSON.
@@ -185,9 +185,9 @@ class _MenuScreenState extends State<MenuScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => CatalogScreen(
-                                    catalogId: child.catalogId ?? child.id,
-                                    title: child.label,
+                                  builder: (_) => FlowScreen(
+                                    node: child,
+                                    operator: operator,
                                   ),
                                 ),
                               ),
@@ -199,6 +199,19 @@ class _MenuScreenState extends State<MenuScreen> {
                                 context,
                                 node: child,
                                 operator: operator,
+                              ),
+                            );
+                            unawaited(_loadFavorites());
+                          case MenuNodeType.flow:
+                            unawaited(
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => FlowScreen(
+                                    node: child,
+                                    operator: operator,
+                                  ),
+                                ),
                               ),
                             );
                             unawaited(_loadFavorites());

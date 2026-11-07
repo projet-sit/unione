@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-import 'package:unione/screens/catalog_screen.dart';
+import 'package:unione/screens/flow_screen.dart';
 import 'package:unione/screens/selection_reseau_screen.dart';
 import 'package:unione/screens/settings_screen.dart';
 import 'package:unione/services/codes_repository.dart';
@@ -108,21 +108,6 @@ void main() {
               expect(find.byType(SelectionReseauScreen), findsOneWidget);
             },
             skip: size.width == 320 && textScale == 1.3,
-          );
-
-          testWidgets(
-            'CatalogScreen ${size.width}x${size.height} '
-            'textScale=$textScale ${themeMode.name}',
-            (tester) async {
-              await _pumpAndSettle(
-                tester,
-                const CatalogScreen(catalogId: 'mtn_internet'),
-                size: size,
-                textScale: textScale,
-                themeMode: themeMode,
-              );
-              expect(find.byType(CatalogScreen), findsOneWidget);
-            },
           );
 
           testWidgets(

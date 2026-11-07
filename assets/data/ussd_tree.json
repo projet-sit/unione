@@ -1,6 +1,6 @@
 {
-  "version": 5,
-  "updatedAt": "2026-11-06",
+  "version": 6,
+  "updatedAt": "2026-11-07",
   "operators": [
     {
       "id": "mtn", "name": "MTN", "country": "Bénin", "color": "#FFCB05", "rootCode": "*199#",
@@ -8,7 +8,7 @@
         {"id":"mtn_solde","type":"action","label":"Solde principal","icon":"bank","category":"solde","keywords":["solde","crédit"],"description":"Consulte votre solde principal MTN.","code":"*126#","params":[],"financial":false,"status":"ok","confidence":"low","source":"code-existant-app","alt":"*123#","notes":"Le code embarqué est prioritaire. La table de référence associe *123# au portail forfaits et le signale comme contradictoire."},
         {"id":"mtn_momo","type":"menu","label":"MTN MoMo","icon":"wallet","category":"mobile_money","keywords":["momo","argent","paiement"],"status":"ok","confidence":"high","children":[
           {"id":"mtn_momo_menu","type":"action","label":"Ouvrir le menu MTN MoMo","icon":"wallet","category":"mobile_money","keywords":["momo","menu"],"description":"Ouvre le menu complet MTN MoMo.","code":"*880#","params":[],"financial":false,"status":"ok","confidence":"high","source":"arcep-mtn","alt":null,"notes":""},
-          {"id":"mtn_momo_pispi","type":"action","label":"Transfert PI-SPI","icon":"transfer","category":"mobile_money","keywords":["pi-spi","interopérable","transfert"],"description":"Ouvre MTN MoMo ; choisissez ensuite l’option 8.","code":"*880#","params":[],"financial":true,"status":"ok","confidence":"high","source":"arcep-mtn","alt":null,"notes":"Raccourci direct à confirmer ; le code ouvre le menu, sans transfert automatique."},
+          {"id":"mtn_momo_pispi","type":"action","label":"Transfert PI-SPI","icon":"transfer","category":"mobile_money","keywords":["pi-spi","interopérable","transfert"],"description":"Ouvre MTN MoMo ; choisissez ensuite l'option 8.","code":"*880#","params":[],"financial":true,"status":"ok","confidence":"high","source":"arcep-mtn","alt":null,"notes":"Raccourci direct à confirmer ; le code ouvre le menu, sans transfert automatique."},
           {"id":"mtn_momo_internet","type":"action","label":"Forfait volume via MoMo","icon":"wifi","category":"forfaits","keywords":["internet","volume","momo"],"description":"Achète un forfait volume avec MTN MoMo.","code":"*880*123*77*{montant}#","params":[{"key":"montant","type":"amount","label":"Montant (FCFA)"}],"financial":true,"status":"ok","confidence":"high","source":"mtn-officiel","alt":null,"notes":"Le PIN est demandé uniquement par l’opérateur."},
           {"id":"mtn_momo_maxi","type":"action","label":"Forfait Maxi via MoMo","icon":"bag","category":"forfaits","keywords":["maxi","forfait","momo"],"description":"Ouvre l’achat de forfait Maxi via MTN MoMo.","code":"*880*45#","params":[],"financial":true,"status":"ok","confidence":"high","source":"mtn-officiel","alt":null,"notes":""},
           {"id":"mtn_momo_open_account","type":"action","label":"Ouvrir un compte MTN MoMo","icon":"person","category":"mobile_money","keywords":["ouvrir","compte","momo"],"description":"Ouvre le menu MTN MoMo pour créer ou accéder à un portefeuille.","code":"*880#","params":[],"financial":false,"status":"ok","confidence":"high","source":"arcep-benin","alt":null,"notes":""}
@@ -27,6 +27,21 @@
           {"id":"mtn_forfaits_status","type":"action","label":"Statut forfait volume","icon":"signal","category":"forfaits","keywords":["statut","solde","volume"],"description":"Consulte le statut d’un forfait volume.","code":"*123*2#","params":[],"financial":false,"status":"ok","confidence":"high","source":"mtn-officiel","alt":null,"notes":""},
           {"id":"mtn_forfaits_deactivate","type":"action","label":"Désactiver un forfait volume","icon":"warning","category":"forfaits","keywords":["désactiver","annuler","forfait"],"description":"Demande la désactivation d’un forfait volume.","code":"*123*7#","params":[],"financial":false,"destructive":true,"status":"ok","confidence":"high","source":"mtn-officiel","alt":null,"notes":"Confirmation renforcée obligatoire."},
           {"id":"mtn_forfaits_reactivate","type":"action","label":"Réactiver avec bonus Extra","icon":"flash","category":"forfaits","keywords":["réactiver","bonus","extra"],"description":"Réactive un forfait avec bonus Extra.","code":"*119#","params":[],"financial":false,"status":"ok","confidence":"high","source":"mtn-officiel","alt":null,"notes":""}
+        ]},
+        {"id":"mtn_flow_forfait","type":"flow","label":"Forfait","icon":"bag","category":"forfaits","keywords":["forfait","internet","appel"],"description":"Achetez un forfait internet ou appel.","status":"ok","confidence":"high","source":"my.mtn.bj","steps":[
+          {"key":"type","label":"Type de service","options":[{"id":"internet","label":"Internet"},{"id":"appel","label":"Appels"}]},
+          {"key":"pour","label":"Pour qui","options":[{"id":"moi","label":"Pour moi"},{"id":"autre","label":"Pour quelqu'un"}]},
+          {"key":"montant","label":"Montant","options":[]}
+        ],"actions":[
+          {"id":"mtn_forfait_internet_moi","type":"internet","moi":{"code":"*133*77*{montant}#","params":[{"key":"montant","type":"amount","label":"Montant (FCFA)","min":100,"max":50000}]},"autre":null,"source":"my.mtn.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"},
+          {"id":"mtn_forfait_appel_moi","type":"appel","moi":{"code":"*133*77*{montant}#","params":[{"key":"montant","type":"amount","label":"Montant (FCFA)","min":100,"max":50000}]},"autre":null,"source":"my.mtn.bj","verifiedAt":"2026-11-07","status":"a_verifier","confidence":"medium"}
+        ]},
+        {"id":"mtn_flow_transfert","type":"flow","label":"Transfert d'argent","icon":"transfer","category":"mobile_money","keywords":["transfert","momo","argent"],"description":"Transférez de l'argent via MTN MoMo.","status":"ok","confidence":"high","source":"my.mtn.bj","steps":[
+          {"key":"pour","label":"Bénéficiaire","options":[{"id":"moi","label":"Pour moi"},{"id":"autre","label":"Pour quelqu'un"}]},
+          {"key":"montant","label":"Montant","options":[]}
+        ],"actions":[
+          {"id":"mtn_transfert_momo_moi","type":"transfert","moi":{"code":"*880#","params":[]},"autre":null,"source":"my.mtn.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"medium"},
+          {"id":"mtn_transfert_momo_autre","type":"transfert","moi":null,"autre":{"code":"*880#","params":[{"key":"numero","type":"phone","label":"Numéro du bénéficiaire","format":"10"},{"key":"montant","type":"amount","label":"Montant (FCFA)"}]},"source":"my.mtn.bj","verifiedAt":"2026-11-07","status":"a_verifier","confidence":"medium"}
         ]}
       ]
     },
@@ -56,7 +71,25 @@
           {"id":"moov_cat_secours","type":"catalog","label":"Internet Secours","icon":"time","category":"forfaits","keywords":["secours","emprunt","internet"],"catalogId":"moov_secours","status":"ok","confidence":"medium"}
         ]},
         {"id":"moov_voix","type":"action","label":"Moov Forfaits Voix","icon":"phone","category":"forfaits","keywords":["voix","appel","forfait"],"description":"Ouvre les forfaits appels Moov.","code":"*173#","params":[],"financial":false,"status":"ok","confidence":"high","source":"moov-officiel","alt":null,"notes":""},
-        {"id":"moov_fidelis","type":"action","label":"Moov Fidelis","icon":"star","category":"fidelite","keywords":["fidelis","fidélité","points"],"description":"Ouvre le programme de fidélité Moov.","code":"*133#","params":[],"financial":false,"status":"ok","confidence":"high","source":"moov-officiel","alt":null,"notes":""}
+        {"id":"moov_fidelis","type":"action","label":"Moov Fidelis","icon":"star","category":"fidelite","keywords":["fidelis","fidélité","points"],"description":"Ouvre le programme de fidélité Moov.","code":"*133#","params":[],"financial":false,"status":"ok","confidence":"high","source":"moov-officiel","alt":null,"notes":""},
+        {"id":"moov_flow_forfait","type":"flow","label":"Forfait","icon":"bag","category":"forfaits","keywords":["forfait","internet","appel"],"description":"Achetez un forfait internet ou appel.","status":"ok","confidence":"high","source":"moov-africa.bj","steps":[
+          {"key":"type","label":"Type de service","options":[{"id":"internet","label":"Internet"},{"id":"appel","label":"Appels"}]},
+          {"key":"pour","label":"Pour qui","options":[{"id":"moi","label":"Pour moi"},{"id":"autre","label":"Pour quelqu'un"}]},
+          {"key":"montant","label":"Montant","options":[]}
+        ],"actions":[
+          {"id":"moov_forfait_internet_moi","type":"internet","moi":{"code":"*123#","params":[]},"autre":null,"source":"moov-africa.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"},
+          {"id":"moov_forfait_appel_moi","type":"appel","moi":{"code":"*173#","params":[]},"autre":null,"source":"moov-africa.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"}
+        ]},
+        {"id":"moov_flow_transfert","type":"flow","label":"Transfert d'argent","icon":"transfer","category":"mobile_money","keywords":["transfert","money","argent"],"description":"Transférez de l'argent via Moov Money.","status":"ok","confidence":"high","source":"moov-africa.bj","steps":[
+          {"key":"type","label":"Type de transfert","options":[{"id":"meme_reseau","label":"Même réseau (Moov)"},{"id":"autre_reseau","label":"Autre réseau"}]},
+          {"key":"montant","label":"Montant","options":[]},
+          {"key":"prenom","label":"Prénom","options":[]},
+          {"key":"nom","label":"Nom","options":[]},
+          {"key":"numero","label":"Numéro","options":[]}
+        ],"actions":[
+          {"id":"moov_transfert_meme_reseau","type":"transfert","moi":{"code":"*855*1*1*1*{numero}*{numero}*{montant}#","params":[{"key":"numero","type":"phone","label":"Numéro du bénéficiaire","format":"10"},{"key":"montant","type":"amount","label":"Montant (FCFA)"}]},"autre":null,"source":"moov-africa.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"},
+          {"id":"moov_transfert_autre_reseau","type":"transfert","moi":null,"autre":{"code":"*855*1*2*{prenom}*{nom}*{numero}*{montant}#","params":[{"key":"prenom","type":"text","label":"Prénom"},{"key":"nom","type":"text","label":"Nom"},{"key":"numero","type":"phone","label":"Numéro du bénéficiaire","format":"10"},{"key":"montant","type":"amount","label":"Montant (FCFA)"}]},"source":"moov-africa.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"}
+        ]}
       ]
     },
     {
@@ -82,7 +115,25 @@
           {"id":"celtiis_pass_hello","type":"action","label":"Pass International Hello","icon":"support","category":"forfaits","keywords":["hello","international","etranger"],"description":"Ouvre les Pass International Hello (Afrique, Europe-Amérique, Monde).","code":"*199#","params":[],"financial":false,"status":"ok","confidence":"medium","source":"celtiis-officiel","notes":"Choisissez Pass Hello dans le menu *199#"}
         ]},
         {"id":"celtiis_fidelite","type":"action","label":"Programme Fidélité","icon":"star","category":"fidelite","keywords":["fidélité","points"],"description":"Ouvre le programme de fidélité Celtiis.","code":"*133#","params":[],"financial":false,"status":"ok","confidence":"high","source":"celtiis-cgu","alt":null,"notes":""},
-        {"id":"celtiis_client","type":"action","label":"Service client","icon":"support","category":"autres","keywords":["support","aide","client"],"description":"Appelle le service client Celtiis.","code":"7373","launchKind":"call","params":[],"financial":false,"status":"ok","confidence":"medium","source":"code-existant-app","alt":null,"notes":"Numéro d’appel, pas un code USSD."}
+        {"id":"celtiis_client","type":"action","label":"Service client","icon":"support","category":"autres","keywords":["support","aide","client"],"description":"Appelle le service client Celtiis.","code":"7373","launchKind":"call","params":[],"financial":false,"status":"ok","confidence":"medium","source":"code-existant-app","alt":null,"notes":"Numéro d’appel, pas un code USSD."},
+        {"id":"celtiis_flow_forfait","type":"flow","label":"Forfait","icon":"bag","category":"forfaits","keywords":["forfait","internet","appel"],"description":"Achetez un forfait internet ou appel.","status":"ok","confidence":"high","source":"celtiis.bj","steps":[
+          {"key":"type","label":"Type de service","options":[{"id":"internet","label":"Internet"},{"id":"appel","label":"Appels"}]},
+          {"key":"pour","label":"Pour qui","options":[{"id":"moi","label":"Pour moi"},{"id":"autre","label":"Pour quelqu'un"}]},
+          {"key":"montant","label":"Montant","options":[]}
+        ],"actions":[
+          {"id":"celtiis_forfait_internet_moi","type":"internet","moi":{"code":"*199*2#","params":[]},"autre":null,"source":"celtiis.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"},
+          {"id":"celtiis_forfait_appel_moi","type":"appel","moi":{"code":"*199*3#","params":[]},"autre":null,"source":"celtiis.bj","verifiedAt":"2026-11-07","status":"ok","confidence":"high"}
+        ]},
+        {"id":"celtiis_flow_transfert","type":"flow","label":"Transfert d'argent","icon":"transfer","category":"mobile_money","keywords":["transfert","cash","argent"],"description":"Transférez de l'argent via Celtiis Cash.","status":"ok","confidence":"high","source":"celtiis.bj","steps":[
+          {"key":"type","label":"Type de transfert","options":[{"id":"meme_reseau","label":"Même réseau (Celtiis)"},{"id":"autre_reseau","label":"Autre réseau"}]},
+          {"key":"montant","label":"Montant","options":[]},
+          {"key":"prenom","label":"Prénom","options":[]},
+          {"key":"nom","label":"Nom","options":[]},
+          {"key":"numero","label":"Numéro","options":[]}
+        ],"actions":[
+          {"id":"celtiis_transfert_meme_reseau","type":"transfert","moi":{"code":"*889#","params":[]},"autre":null,"source":"celtiis.bj","verifiedAt":"2026-11-07","status":"a_verifier","confidence":"medium"},
+          {"id":"celtiis_transfert_autre_reseau","type":"transfert","moi":null,"autre":null,"source":"celtiis.bj","verifiedAt":"2026-11-07","status":"a_verifier","confidence":"low"}
+        ]}
       ]
     }
   ]

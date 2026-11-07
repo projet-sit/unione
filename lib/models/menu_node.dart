@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
-enum MenuNodeType { menu, action, catalog }
+enum MenuNodeType { menu, action, catalog, flow }
 
 class CodeParameter {
   final String key;
   final String type;
   final String label;
   final String? format;
+  final int? min;
+  final int? max;
   final List<String> options;
   final String? notes;
 
@@ -15,6 +17,8 @@ class CodeParameter {
     required this.type,
     required this.label,
     this.format,
+    this.min,
+    this.max,
     this.options = const [],
     this.notes,
   });
@@ -38,6 +42,8 @@ class CodeParameter {
       type: type,
       label: label,
       format: json['format']?.toString(),
+      min: (json['min'] as num?)?.toInt(),
+      max: (json['max'] as num?)?.toInt(),
       options: List<String>.from(
         (options ?? const []).map((item) => item.toString()),
       ),
@@ -50,8 +56,116 @@ class CodeParameter {
     'type': type,
     'label': label,
     if (format != null) 'format': format,
+    if (min != null) 'min': min,
+    if (max != null) 'max': max,
     if (options.isNotEmpty) 'options': options,
     if (notes != null) 'notes': notes,
+  };
+}
+
+/// Étape d'un parcours guidé (ex. type, pour qui).
+class FlowStep {
+  final String key;
+  final String label;
+  final List<FlowOption> options;
+
+  const FlowStep({
+    required this.key,
+    required this.label,
+    required this.options,
+  });
+
+  factory FlowStep.fromJson(Map<String, dynamic> json) {
+    final rawOptions = json['options'];
+    final options = (rawOptions is List ? rawOptions : const [])
+        .whereType<Map<String, dynamic>>()
+        .map(FlowOption.fromJson)
+        .toList(growable: false);
+    return FlowStep(
+      key: json['key']?.toString() ?? '',
+      label: json['label']?.toString() ?? '',
+      options: options,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'key': key,
+    'label': label,
+    'options': options.map((o) => o.toJson()).toList(),
+  };
+}
+
+/// Option d'une étape du parcours guidé.
+class FlowOption {
+  final String id;
+  final String label;
+
+  const FlowOption({required this.id, required this.label});
+
+  factory FlowOption.fromJson(Map<String, dynamic> json) {
+    return FlowOption(
+      id: json['id']?.toString() ?? '',
+      label: json['label']?.toString() ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {'id': id, 'label': label};
+}
+
+/// Variante d'une action (pour soi / pour un autre).
+class FlowVariant {
+  final String? code;
+  final List<CodeParameter> params;
+
+  const FlowVariant({this.code, this.params = const []});
+
+  factory FlowVariant.fromJson(Map<String, dynamic> json) {
+    final rawParams = json['params'];
+    final params = (rawParams is List ? rawParams : const [])
+        .whereType<Map<String, dynamic>>()
+        .map(CodeParameter.fromJson)
+        .toList(growable: false);
+    return FlowVariant(code: json['code']?.toString(), params: params);
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (code != null) 'code': code,
+    if (params.isNotEmpty) 'params': params.map((p) => p.toJson()).toList(),
+  };
+}
+
+/// Action déclenchée à la fin d'un parcours guidé.
+class FlowAction {
+  final String id;
+  final String type; // 'internet', 'appel', 'transfert'
+  final FlowVariant? moi;
+  final FlowVariant? autre;
+
+  const FlowAction({
+    required this.id,
+    required this.type,
+    this.moi,
+    this.autre,
+  });
+
+  factory FlowAction.fromJson(Map<String, dynamic> json) {
+    return FlowAction(
+      id: json['id']?.toString() ?? '',
+      type: json['type']?.toString() ?? '',
+      moi: json['moi'] is Map<String, dynamic>
+          ? FlowVariant.fromJson(json['moi'] as Map<String, dynamic>)
+          : null,
+      autre: json['autre'] is Map<String, dynamic>
+          ? FlowVariant.fromJson(json['autre'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'type': type,
+    if (moi != null) 'moi': moi!.toJson(),
+    if (autre != null) 'autre': autre!.toJson(),
   };
 }
 
@@ -78,6 +192,12 @@ class MenuNode {
   final String? catalogId;
   final List<MenuNode> children;
 
+  /// Pour un nœud de type flow : étapes du parcours guidé (type, pour qui, etc.)
+  final List<FlowStep>? steps;
+
+  /// Pour un nœud de type flow : actions disponibles à la dernière étape.
+  final List<FlowAction>? actions;
+
   const MenuNode({
     required this.id,
     required this.type,
@@ -100,11 +220,17 @@ class MenuNode {
     this.notes,
     this.catalogId,
     this.children = const [],
+    this.steps,
+    this.actions,
   });
 
   bool get isAvailable =>
       (type == MenuNodeType.action && code != null && status == 'ok') ||
-      (type == MenuNodeType.catalog && catalogId != null && status == 'ok');
+      (type == MenuNodeType.catalog && catalogId != null && status == 'ok') ||
+      (type == MenuNodeType.flow &&
+          status == 'ok' &&
+          actions != null &&
+          actions!.isNotEmpty);
 
   factory MenuNode.fromJson(Map<String, dynamic> json) {
     final catalogId = json['catalogId']?.toString();
@@ -114,6 +240,7 @@ class MenuNode {
       'menu' => MenuNodeType.menu,
       'action' => MenuNodeType.action,
       'catalog' => MenuNodeType.catalog,
+      'flow' => MenuNodeType.flow,
       _ => null,
     };
     final label = json['label']?.toString() ?? '';
@@ -155,6 +282,22 @@ class MenuNode {
           return CodeParameter.fromJson(param);
         })
         .toList(growable: false);
+    final steps = (json['steps'] as List? ?? const [])
+        .map((step) {
+          if (step is! Map<String, dynamic>) {
+            throw const FormatException('Étape de flow invalide.');
+          }
+          return FlowStep.fromJson(step);
+        })
+        .toList(growable: false);
+    final actions = (json['actions'] as List? ?? const [])
+        .map((action) {
+          if (action is! Map<String, dynamic>) {
+            throw const FormatException('Action de flow invalide.');
+          }
+          return FlowAction.fromJson(action);
+        })
+        .toList(growable: false);
     if (type == MenuNodeType.menu &&
         (children.isEmpty || code != null || params.isNotEmpty)) {
       throw const FormatException(
@@ -168,6 +311,11 @@ class MenuNode {
     if (type == MenuNodeType.catalog &&
         (catalogId == null || catalogId.isEmpty || children.isNotEmpty)) {
       throw const FormatException('Nœud catalogue USSD invalide.');
+    }
+    if (type == MenuNodeType.flow && (steps.isEmpty || actions.isEmpty)) {
+      throw const FormatException(
+        'Un nœud flow doit avoir des étapes et des actions.',
+      );
     }
     return MenuNode(
       id: id,
@@ -195,6 +343,8 @@ class MenuNode {
       notes: json['notes']?.toString(),
       catalogId: catalogId,
       children: children,
+      steps: steps,
+      actions: actions,
     );
   }
 }
@@ -305,9 +455,13 @@ class UssdTree {
       _nodes.values.where((node) => node.type == MenuNodeType.action);
   Iterable<MenuNode> get catalogs =>
       _nodes.values.where((node) => node.type == MenuNodeType.catalog);
+  Iterable<MenuNode> get flows =>
+      _nodes.values.where((node) => node.type == MenuNodeType.flow);
   Iterable<MenuNode> get searchableNodes => _nodes.values.where(
     (node) =>
-        node.type == MenuNodeType.action || node.type == MenuNodeType.catalog,
+        node.type == MenuNodeType.action ||
+        node.type == MenuNodeType.catalog ||
+        node.type == MenuNodeType.flow,
   );
 
   List<MenuNode> breadcrumb(String id) {

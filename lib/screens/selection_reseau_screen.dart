@@ -17,7 +17,7 @@ import '../widgets/reseau_card.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
 import '../widgets/skeleton_loader.dart';
-import 'catalog_screen.dart';
+import 'flow_screen.dart';
 import 'menu_screen.dart';
 import 'settings_screen.dart';
 
@@ -108,13 +108,13 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   }
 
   Future<void> _openNode(MenuNode node, OperatorTree operator) async {
-    if (node.type == MenuNodeType.catalog) {
+    if (node.type == MenuNodeType.catalog || node.type == MenuNodeType.flow) {
       await Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (_) => CatalogScreen(
-            catalogId: node.catalogId ?? node.id,
-            title: node.label,
+          builder: (_) => FlowScreen(
+            node: node,
+            operator: operator,
           ),
         ),
       );
