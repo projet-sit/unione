@@ -55,15 +55,13 @@ void main() {
                 'confidence': 'high',
                 'code': '*126#',
                 'params': [],
-              }
+              },
             ],
-          }
+          },
         ],
       });
 
-      SharedPreferences.setMockInitialValues({
-        'ussd_tree_v5': validJson,
-      });
+      SharedPreferences.setMockInitialValues({'ussd_tree_v5': validJson});
 
       final repository = CodesRepository.instance;
       await repository.initialize();
@@ -72,6 +70,49 @@ void main() {
       expect(repository.catalogue.value!.version, 99);
       expect(repository.catalogue.value!.node('mtn_solde_custom'), isNotNull);
     });
+
+    test(
+      'un catalogue embarqué plus récent remplace un ancien cache',
+      () async {
+        final oldCache = jsonEncode({
+          'version': 1,
+          'catalogs': {
+            'ancien_catalogue': {
+              'operator': 'mtn',
+              'label': 'Ancien',
+              'tabs': [
+                {'id': 'daily', 'label': 'Quotidien'},
+              ],
+              'launch': {'mode': 'menu', 'code': '*123#'},
+              'offers': [
+                {
+                  'id': 'ancien_offre',
+                  'tab': 'daily',
+                  'price': 100,
+                  'title': 'Ancien',
+                  'confidence': 'to_test',
+                },
+              ],
+            },
+          },
+        });
+        SharedPreferences.setMockInitialValues({'catalogs_v1': oldCache});
+
+        final repository = CodesRepository.instance;
+        repository.catalogue.value = null;
+        repository.catalogs.value = null;
+        await repository.initialize();
+
+        expect(repository.catalogs.value, isNotNull);
+        expect(repository.catalogs.value!.version, 3);
+        expect(repository.catalogs.value!.catalog('ancien_catalogue'), isNull);
+        expect(repository.getCatalog('celtiis_connect'), isNotNull);
+        expect(
+          repository.findOffer('celtiis_connect_2500')!.confidence,
+          'official',
+        );
+      },
+    );
 
     test('initializes and decodes bundled catalogs correctly', () async {
       SharedPreferences.setMockInitialValues({});

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:async';
-import 'dart:io';
 
 import '../models/catalog_model.dart';
 import '../models/history_item.dart';
 import '../models/menu_node.dart';
 import '../models/reseau.dart';
-import '../services/android_ussd_gateway.dart';
 import '../services/codes_repository.dart';
 import '../services/history_service.dart';
+import '../services/quick_action_service.dart';
 import '../services/theme_service.dart';
 import '../services/user_preferences_service.dart';
 import '../widgets/app_logo.dart';
@@ -34,19 +32,33 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
   final _search = TextEditingController();
   Timer? _debounce;
   Set<String> _favorites = {};
-  String? _detectedOperator;
+  List<String> _recents = [];
 
   @override
   void initState() {
     super.initState();
     _search.addListener(_onSearchChanged);
+    QuickActionService.action.addListener(_onQuickAction);
     _loadPersonalization();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       for (final path in OperatorLogo.availableAssets) {
         precacheImage(AssetImage(path), context);
       }
+      _onQuickAction();
     });
+  }
+
+  void _onQuickAction() {
+    final value = QuickActionService.action.value;
+    if (value == null || !mounted) return;
+    QuickActionService.action.value = null;
+    if (value.isEmpty || value == 'home') {
+      _search.clear();
+      return;
+    }
+    _search.text = value;
+    _search.selection = TextSelection.collapsed(offset: _search.text.length);
   }
 
   void _onSearchChanged() {
@@ -58,6 +70,7 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
 
   @override
   void dispose() {
+    QuickActionService.action.removeListener(_onQuickAction);
     _debounce?.cancel();
     _search.dispose();
     super.dispose();
@@ -65,18 +78,29 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
 
   Future<void> _loadPersonalization() async {
     final favorites = await UserPreferencesService.instance.favorites();
-    String? detected;
-    if (!kIsWeb && Platform.isAndroid) {
-      final mccMnc = await AndroidUssdGateway().simOperator();
-      detected = operatorIdFromMccMnc(mccMnc);
+    final recents = await UserPreferencesService.instance.recents();
+    if (mounted) {
+      setState(() {
+        _favorites = favorites;
+        _recents = recents;
+      });
     }
-    if (mounted) setState(() { _favorites = favorites; _detectedOperator = detected; });
   }
 
   Future<void> _openOperator(OperatorTree operator) async {
-    await _history.logEvent(title: 'history_network_title', description: 'history_network_selected|${operator.name}', network: operator.name, type: HistoryType.networkSelection);
+    await _history.logEvent(
+      title: 'history_network_title',
+      description: 'history_network_selected|${operator.name}',
+      network: operator.name,
+      type: HistoryType.networkSelection,
+    );
     if (!mounted) return;
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => MenuScreen(nodeId: 'operator:${operator.id}')));
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => MenuScreen(nodeId: 'operator:${operator.id}'),
+      ),
+    );
     _loadPersonalization();
   }
 
@@ -94,11 +118,22 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
       _loadPersonalization();
     } else {
       await ServiceLauncher.launchNode(context, node: node, operator: operator);
+      await _loadPersonalization();
     }
   }
 
-  Future<void> _openOffer(CatalogModel catalog, OfferModel offer, OperatorTree operator) async {
-    await ServiceLauncher.launchOffer(context, catalog: catalog, offer: offer, operator: operator);
+  Future<void> _openOffer(
+    CatalogModel catalog,
+    OfferModel offer,
+    OperatorTree operator,
+  ) async {
+    await ServiceLauncher.launchOffer(
+      context,
+      catalog: catalog,
+      offer: offer,
+      operator: operator,
+    );
+    await _loadPersonalization();
   }
 
   @override
@@ -108,22 +143,49 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
       valueListenable: CodesRepository.instance.catalogue,
       builder: (context, tree, _) {
         if (tree == null) {
-          return Scaffold(body: SafePage(child: ListView(children: [
-            _header(), const SizedBox(height: 28),
-            const SkeletonBox(height: 52, borderRadius: 18),
-            const SizedBox(height: 28),
-            const SkeletonBox(height: 20, borderRadius: 6),
-            const SizedBox(height: 20),
-            const SkeletonReseauCard(),
-            const SkeletonReseauCard(),
-            const SkeletonReseauCard(),
-          ])));
+          return Scaffold(
+            body: SafePage(
+              child: ListView(
+                children: [
+                  _header(),
+                  const SizedBox(height: 28),
+                  const SkeletonBox(height: 52, borderRadius: 18),
+                  const SizedBox(height: 28),
+                  const SkeletonBox(height: 20, borderRadius: 6),
+                  const SizedBox(height: 20),
+                  const SkeletonReseauCard(),
+                  const SkeletonReseauCard(),
+                  const SkeletonReseauCard(),
+                ],
+              ),
+            ),
+          );
         }
         final query = _search.text.trim().toLowerCase();
-        final operators = [...tree.operators]..sort((a, b) => a.id == _detectedOperator ? -1 : b.id == _detectedOperator ? 1 : 0);
+        // Ordre d'accueil fixe : MTN, puis Moov, puis Celtiis.
+        const operatorOrder = <String, int>{'mtn': 0, 'moov': 1, 'celtiis': 2};
+        final operators = [...tree.operators]
+          ..sort((a, b) {
+            final rankA = operatorOrder[a.id.toLowerCase()] ?? 99;
+            final rankB = operatorOrder[b.id.toLowerCase()] ?? 99;
+            if (rankA != rankB) return rankA.compareTo(rankB);
+            return a.name.compareTo(b.name);
+          });
         final searchableNodes = tree.searchableNodes.toList(growable: false);
-        final results = query.isEmpty ? const <MenuNode>[] : searchableNodes.where((node) => [node.label, node.category ?? '', ...node.keywords].join(' ').toLowerCase().contains(query)).toList();
-        final favorites = searchableNodes.where((node) => _favorites.contains(node.id)).toList();
+        final results = query.isEmpty
+            ? const <MenuNode>[]
+            : searchableNodes
+                  .where(
+                    (node) => [
+                      node.label,
+                      node.category ?? '',
+                      ...node.keywords,
+                    ].join(' ').toLowerCase().contains(query),
+                  )
+                  .toList();
+        final favorites = searchableNodes
+            .where((node) => _favorites.contains(node.id))
+            .toList();
 
         return ValueListenableBuilder<CatalogsData?>(
           valueListenable: CodesRepository.instance.catalogs,
@@ -148,76 +210,117 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
                   ].join(' ').toLowerCase();
 
                   if (searchBlob.contains(query)) {
-                    matchingOffers.add(_OfferSearchResult(
-                      catalog: cat,
-                      offer: off,
-                      operator: op,
-                    ));
+                    matchingOffers.add(
+                      _OfferSearchResult(
+                        catalog: cat,
+                        offer: off,
+                        operator: op,
+                      ),
+                    );
                   }
                 }
               }
             }
 
             final hasResults = results.isNotEmpty || matchingOffers.isNotEmpty;
+            final recentEntries = _buildRecents(tree, catalogsData);
 
             return Scaffold(
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              body: SafePage(child: ListView(children: [
-                _header(), const SizedBox(height: 28),
-                TextField(
-                  controller: _search,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher : solde, forfait, 1 Go, 500, illimité…',
-                    prefixIcon: const Icon(Icons.search_rounded),
-                    suffixIcon: query.isEmpty ? null : IconButton(icon: const Icon(Icons.close), onPressed: _search.clear),
-                    filled: true,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+              body: SafePage(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _header(),
+                      const SizedBox(height: 28),
+                      TextField(
+                        controller: _search,
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher…',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: query.isEmpty
+                              ? null
+                              : IconButton(
+                                  icon: const Icon(Icons.close),
+                                  onPressed: _search.clear,
+                                ),
+                          filled: true,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(18),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      if (query.isEmpty) ...[
+                        const SizedBox(height: 10),
+                        _quickSearchChips(),
+                        const SizedBox(height: 18),
+                      ] else
+                        const SizedBox(height: 28),
+                      if (query.isNotEmpty) ...[
+                        _title('Résultats'),
+                        if (!hasResults)
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 24),
+                            child: Text(
+                              'Aucun service ni forfait ne correspond à votre recherche.',
+                            ),
+                          ),
+                        if (matchingOffers.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'FORFAITS (${matchingOffers.length})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.primary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          _offerResultsList(matchingOffers),
+                        ],
+                        if (results.isNotEmpty) ...[
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Text(
+                              'SERVICES & CATALOGUES (${results.length})',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: Theme.of(context).colorScheme.primary,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                          _actionList(tree, results),
+                        ],
+                      ] else ...[
+                        if (recentEntries.isNotEmpty) ...[
+                          _smallTitle('Récents'),
+                          _recentSection(recentEntries),
+                        ],
+                        if (favorites.isNotEmpty) ...[
+                          _smallTitle('Favoris'),
+                          _actionList(tree, favorites),
+                        ],
+                        _title('Veuillez sélectionner un réseau :'),
+                        ...operators.map(
+                          (operator) => Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: ReseauCard(
+                              reseau: _toReseau(operator),
+                              onTap: () => _openOperator(operator),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                const SizedBox(height: 28),
-                if (query.isNotEmpty) ...[
-                  _title('Résultats'),
-                  if (!hasResults)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 24),
-                      child: Text('Aucun service ni forfait ne correspond à votre recherche.'),
-                    ),
-                  if (matchingOffers.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'FORFAITS (${matchingOffers.length})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.primary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    _offerResultsList(matchingOffers),
-                  ],
-                  if (results.isNotEmpty) ...[
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        'SERVICES & CATALOGUES (${results.length})',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: Theme.of(context).colorScheme.primary,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    _actionList(tree, results),
-                  ],
-                ] else ...[
-                  if (favorites.isNotEmpty) ...[_title('Favoris'), _actionList(tree, favorites)],
-                  _title('Veuillez sélectionner un réseau :'),
-                  ...operators.map((operator) => Padding(padding: const EdgeInsets.only(bottom: 16), child: ReseauCard(reseau: _toReseau(operator), onTap: () => _openOperator(operator)))),
-                ],
-              ])),
+              ),
             );
           },
         );
@@ -225,83 +328,374 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     ),
   );
 
-  Widget _header() => Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-    Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Theme.of(context).colorScheme.primary.withValues(alpha: .1), borderRadius: BorderRadius.circular(12)), child: const AppLogo(size: 32)), const SizedBox(width: 14), Text('UNIONE', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 22, fontWeight: FontWeight.w900))]),
-    IconButton(icon: const Icon(Icons.settings_outlined), tooltip: 'Paramètres', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()))),
-  ]);
+  Widget _header() => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const AppLogo(size: 32),
+          ),
+          const SizedBox(width: 14),
+          Text(
+            'UNIONE',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+      IconButton(
+        icon: const Icon(Icons.settings_outlined),
+        tooltip: 'Paramètres',
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const SettingsScreen()),
+        ),
+      ),
+    ],
+  );
 
-  Widget _title(String title) => Padding(padding: const EdgeInsets.only(bottom: 14, top: 4), child: Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 25, fontWeight: FontWeight.w900)));
+  Widget _title(String title) => Padding(
+    padding: const EdgeInsets.only(bottom: 14, top: 4),
+    child: Text(
+      title,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 25,
+        fontWeight: FontWeight.w900,
+      ),
+    ),
+  );
 
-  Widget _actionList(UssdTree tree, List<MenuNode> nodes, {String? empty}) => nodes.isEmpty
-      ? Padding(padding: const EdgeInsets.only(bottom: 24), child: Text(empty ?? ''))
-      : Padding(padding: const EdgeInsets.only(bottom: 26), child: Column(children: nodes.map((node) {
-          final operator = tree.operatorFor(node.id)!;
-          final path = tree.breadcrumb(node.id).map((item) => item.label).toList()..removeLast();
-          final subtitle = [operator.name, ...path].join(' › ');
-          final isCatalog = node.type == MenuNodeType.catalog;
+  Widget _smallTitle(String title) => Padding(
+    padding: const EdgeInsets.only(bottom: 12, top: 4),
+    child: Text(
+      title,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurface,
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+      ),
+    ),
+  );
 
-          return Semantics(
-            label: '${node.label}, $subtitle. Appuyez pour accéder.',
-            button: true,
-            excludeSemantics: true,
-            child: Card(child: ListTile(
-              onTap: () => _openNode(node, operator),
-              onLongPress: () async {
-                final result = await OperationMenuSheet.show(context, node: node, operator: operator, tree: tree, favorite: _favorites.contains(node.id));
-                if (result == null) return;
-                setState(() {
-                  result ? _favorites.add(node.id) : _favorites.remove(node.id);
-                });
-              },
-              leading: OperatorLogo(operatorId: operator.id, size: 40, borderRadius: 10),
-              title: Text(
-                node.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w800),
-              ),
-              subtitle: Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              trailing: isCatalog
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: OperatorLogo.accent(context, operator.color).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'CATALOGUE',
-                        style: TextStyle(
-                          color: OperatorLogo.accent(context, operator.color),
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    )
-                  : const Icon(Icons.chevron_right_rounded),
-            )),
+  /// Raccourcis de recherche, volontairement limités à quatre.
+  Widget _quickSearchChips() {
+    const shortcuts = <({String label, IconData icon, String query})>[
+      (
+        label: 'Solde',
+        icon: Icons.account_balance_wallet_outlined,
+        query: 'solde',
+      ),
+      (label: 'Internet', icon: Icons.wifi_rounded, query: 'internet'),
+      (label: 'Transfert', icon: Icons.swap_horiz_rounded, query: 'transfert'),
+      (label: 'Forfaits', icon: Icons.card_giftcard_rounded, query: 'forfait'),
+    ];
+
+    return SizedBox(
+      height: 38,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: shortcuts.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, index) {
+          final shortcut = shortcuts[index];
+          return ActionChip(
+            visualDensity: VisualDensity.compact,
+            avatar: Icon(shortcut.icon, size: 18),
+            label: Text(shortcut.label),
+            onPressed: () {
+              _search.text = shortcut.query;
+              _search.selection = TextSelection.collapsed(
+                offset: _search.text.length,
+              );
+            },
           );
-        }).toList()));
+        },
+      ),
+    );
+  }
+
+  /// Résout les identifiants mémorisés (`n:` service, `o:` forfait) en entrées
+  /// affichables. Les identifiants devenus inconnus sont ignorés sans erreur.
+  List<_RecentEntry> _buildRecents(UssdTree tree, CatalogsData? catalogsData) {
+    final entries = <_RecentEntry>[];
+    for (final raw in _recents) {
+      if (raw.startsWith('n:')) {
+        final node = tree.node(raw.substring(2));
+        final operator = node == null ? null : tree.operatorFor(node.id);
+        if (node != null && operator != null) {
+          entries.add(_RecentEntry(node: node, operator: operator));
+        }
+      } else if (raw.startsWith('o:') && catalogsData != null) {
+        final rest = raw.substring(2);
+        final separator = rest.indexOf(':');
+        if (separator <= 0) continue;
+        final catalog = catalogsData.catalog(rest.substring(0, separator));
+        if (catalog == null) continue;
+        final offerId = rest.substring(separator + 1);
+        final offer = catalog.offers
+            .where((candidate) => candidate.id == offerId)
+            .firstOrNull;
+        final operator = tree.operators
+            .where(
+              (candidate) =>
+                  candidate.id.toLowerCase() == catalog.operator.toLowerCase(),
+            )
+            .firstOrNull;
+        if (offer != null && operator != null) {
+          entries.add(
+            _RecentEntry(catalog: catalog, offer: offer, operator: operator),
+          );
+        }
+      }
+    }
+    return entries;
+  }
+
+  Widget _recentSection(List<_RecentEntry> entries) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 26),
+      child: SizedBox(
+        height: 88,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: entries.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 10),
+          itemBuilder: (context, index) {
+            final entry = entries[index];
+            return Semantics(
+              button: true,
+              label:
+                  '${entry.label}, ${entry.subtitle}. Appuyez pour relancer.',
+              excludeSemantics: true,
+              child: SizedBox(
+                width: 168,
+                child: Card(
+                  margin: EdgeInsets.zero,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _openRecent(entry),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              OperatorLogo(
+                                operatorId: entry.operator.id,
+                                size: 26,
+                                borderRadius: 8,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  entry.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            entry.subtitle,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurface.withValues(alpha: 0.6),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openRecent(_RecentEntry entry) async {
+    final node = entry.node;
+    if (node != null) {
+      await _openNode(node, entry.operator);
+      return;
+    }
+    final catalog = entry.catalog;
+    final offer = entry.offer;
+    if (catalog != null && offer != null) {
+      await _openOffer(catalog, offer, entry.operator);
+    }
+  }
+
+  Widget _favoriteButton(MenuNode node) {
+    final isFavorite = _favorites.contains(node.id);
+    return IconButton(
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+      visualDensity: VisualDensity.compact,
+      tooltip: isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+      icon: Icon(
+        isFavorite ? Icons.star_rounded : Icons.star_border_rounded,
+        color: isFavorite ? Theme.of(context).colorScheme.primary : null,
+      ),
+      onPressed: () async {
+        final nowFavorite = await UserPreferencesService.instance
+            .toggleFavorite(node.id);
+        if (!mounted) return;
+        setState(() {
+          nowFavorite ? _favorites.add(node.id) : _favorites.remove(node.id);
+        });
+        ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+          SnackBar(
+            content: Text(
+              nowFavorite ? 'Ajouté aux favoris' : 'Retiré des favoris',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _actionList(UssdTree tree, List<MenuNode> nodes, {String? empty}) =>
+      nodes.isEmpty
+      ? Padding(
+          padding: const EdgeInsets.only(bottom: 24),
+          child: Text(empty ?? ''),
+        )
+      : Padding(
+          padding: const EdgeInsets.only(bottom: 26),
+          child: Column(
+            children: nodes.map((node) {
+              final operator = tree.operatorFor(node.id)!;
+              final path =
+                  tree.breadcrumb(node.id).map((item) => item.label).toList()
+                    ..removeLast();
+              final subtitle = [operator.name, ...path].join(' › ');
+              final isCatalog = node.type == MenuNodeType.catalog;
+
+              return Semantics(
+                label: '${node.label}, $subtitle. Appuyez pour accéder.',
+                button: true,
+                excludeSemantics: true,
+                child: Card(
+                  child: ListTile(
+                    onTap: () => _openNode(node, operator),
+                    onLongPress: () async {
+                      final result = await OperationMenuSheet.show(
+                        context,
+                        node: node,
+                        operator: operator,
+                        tree: tree,
+                        favorite: _favorites.contains(node.id),
+                      );
+                      if (result == null) return;
+                      setState(() {
+                        result
+                            ? _favorites.add(node.id)
+                            : _favorites.remove(node.id);
+                      });
+                    },
+                    leading: OperatorLogo(
+                      operatorId: operator.id,
+                      size: 40,
+                      borderRadius: 10,
+                    ),
+                    title: Text(
+                      node.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    subtitle: Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (isCatalog)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: OperatorLogo.accent(
+                                context,
+                                operator.color,
+                              ).withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              'CATALOGUE',
+                              style: TextStyle(
+                                color: OperatorLogo.accent(
+                                  context,
+                                  operator.color,
+                                ),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        _favoriteButton(node),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
 
   Widget _offerResultsList(List<_OfferSearchResult> matches) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 26),
       child: Column(
         children: matches.map((match) {
-          final title = match.offer.title == 'à confirmer' ? 'Forfait à confirmer' : match.offer.title;
-          final subtitle = '${match.catalog.label} · ${match.operator.name}${match.offer.validityLabel != null ? ' · ${match.offer.validityLabel}' : ''}';
+          final title = match.offer.title;
+          final subtitle =
+              '${match.catalog.label} · ${match.operator.name}${match.offer.validityLabel != null ? ' · ${match.offer.validityLabel}' : ''}';
 
           return Semantics(
-            label: '$title, ${match.offer.price} FCFA, $subtitle. Appuyez pour lancer l’activation.',
+            label:
+                '$title, ${match.offer.price} FCFA, $subtitle. Appuyez pour lancer l’activation.',
             button: true,
             excludeSemantics: true,
             child: Card(
               child: ListTile(
-                onTap: () => _openOffer(match.catalog, match.offer, match.operator),
-                leading: OperatorLogo(operatorId: match.operator.id, size: 40, borderRadius: 10),
+                onTap: () =>
+                    _openOffer(match.catalog, match.offer, match.operator),
+                leading: OperatorLogo(
+                  operatorId: match.operator.id,
+                  size: 40,
+                  borderRadius: 10,
+                ),
                 title: Text(
                   title,
                   maxLines: 1,
@@ -331,7 +725,16 @@ class _SelectionReseauScreenState extends State<SelectionReseauScreen> {
     );
   }
 
-  Reseau _toReseau(OperatorTree operator) => Reseau(type: switch (operator.id) { 'mtn' => ReseauType.mtn, 'moov' => ReseauType.moov, _ => ReseauType.celtiis }, nom: operator.name, couleur: operator.color, logoLabel: operator.name.toUpperCase());
+  Reseau _toReseau(OperatorTree operator) => Reseau(
+    type: switch (operator.id) {
+      'mtn' => ReseauType.mtn,
+      'moov' => ReseauType.moov,
+      _ => ReseauType.celtiis,
+    },
+    nom: operator.name,
+    couleur: operator.color,
+    logoLabel: operator.name.toUpperCase(),
+  );
 }
 
 class _OfferSearchResult {
@@ -343,4 +746,32 @@ class _OfferSearchResult {
     required this.offer,
     required this.operator,
   });
+}
+
+/// Entrée récente déjà résolue : soit un service du catalogue USSD, soit un
+/// forfait. Aucune donnée personnelle n'est conservée.
+class _RecentEntry {
+  final MenuNode? node;
+  final CatalogModel? catalog;
+  final OfferModel? offer;
+  final OperatorTree operator;
+
+  const _RecentEntry({
+    this.node,
+    this.catalog,
+    this.offer,
+    required this.operator,
+  });
+
+  String get label => node?.label ?? offer?.title ?? '';
+
+  String get subtitle {
+    final target = node;
+    if (target != null) {
+      return target.type == MenuNodeType.catalog
+          ? '${operator.name} · Forfaits'
+          : operator.name;
+    }
+    return '${operator.name} · ${offer?.price ?? 0} F';
+  }
 }

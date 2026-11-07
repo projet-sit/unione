@@ -71,7 +71,9 @@ class HistoryService {
           ''');
       },
       onUpgrade: (db, oldVersion, newVersion) async {
-        if (oldVersion < 2) await db.execute('ALTER TABLE history ADD COLUMN service_id TEXT');
+        if (oldVersion < 2) {
+          await db.execute('ALTER TABLE history ADD COLUMN service_id TEXT');
+        }
       },
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../config/app_config.dart';
 import '../services/device_info_service.dart';
 import '../services/theme_service.dart';
@@ -30,16 +30,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _copyWhatsAppNumber(BuildContext context) async {
-    final messenger = ScaffoldMessenger.of(context);
-    await Clipboard.setData(
-      const ClipboardData(text: AppConfig.whatsappDisplay),
-    );
-    messenger.showSnackBar(
-      SnackBar(content: Text('whatsapp_number_copied'.tr())),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -53,199 +43,181 @@ class SettingsScreen extends StatelessWidget {
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-          _buildSectionTitle(context, 'general'.tr()),
-          _buildSettingsCard(context, [
-            _buildSettingTile(
-              context: context,
-              icon: Icons.history,
-              title: 'history'.tr(),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                );
-              },
-            ),
-            _buildDivider(context),
-            ListenableBuilder(
-              listenable: themeNotifier,
-              builder: (context, _) => _buildSettingTile(
+            _buildSectionTitle(context, 'general'.tr()),
+            _buildSettingsCard(context, [
+              _buildSettingTile(
                 context: context,
-                icon: Icons.palette_outlined,
-                title: 'theme'.tr(),
-                subtitle: switch (themeNotifier.themeMode) {
-                  ThemeMode.light => 'light'.tr(),
-                  ThemeMode.dark => 'dark'.tr(),
-                  ThemeMode.system => 'system'.tr(),
+                icon: Icons.history,
+                title: 'history'.tr(),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                  );
                 },
-                onTap: () => _showThemeDialog(context),
               ),
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.sim_card_outlined,
-              title: 'sim_help_title'.tr(),
-              subtitle: 'sim_help_subtitle'.tr(),
-              onTap: () => _showSimHelpSheet(context),
-            ),
-          ]),
-
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'security_legal'.tr()),
-          _buildSettingsCard(context, [
-            _buildSettingTile(
-              context: context,
-              icon: Icons.security,
-              title: 'security'.tr(),
-              onTap: () => _showSecuritySheet(context),
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.privacy_tip_outlined,
-              title: 'privacy'.tr(),
-              onTap: () {
-                showDialog(
+              _buildDivider(context),
+              ListenableBuilder(
+                listenable: themeNotifier,
+                builder: (context, _) => _buildSettingTile(
                   context: context,
-                  builder: (ctx) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    title: Text(
-                      'privacy'.tr(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface,
-                        fontWeight: FontWeight.w900,
+                  icon: Icons.palette_outlined,
+                  title: 'theme'.tr(),
+                  subtitle: switch (themeNotifier.themeMode) {
+                    ThemeMode.light => 'light'.tr(),
+                    ThemeMode.dark => 'dark'.tr(),
+                    ThemeMode.system => 'system'.tr(),
+                  },
+                  onTap: () => _showThemeDialog(context),
+                ),
+              ),
+            ]),
+
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'security_legal'.tr()),
+            _buildSettingsCard(context, [
+              _buildSettingTile(
+                context: context,
+                icon: Icons.security,
+                title: 'security'.tr(),
+                onTap: () => _showSecuritySheet(context),
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.privacy_tip_outlined,
+                title: 'privacy'.tr(),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
                       ),
-                    ),
-                    content: Text(
-                      'privacy_content'.tr(),
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(ctx),
-                        child: Text(
-                          'ok'.tr(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                      title: Text(
+                        'privacy'.tr(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.description_outlined,
-              title: 'terms'.tr(),
-              onTap: () => _showTermsSheet(context),
-            ),
-          ]),
+                      content: Text(
+                        'privacy_content'.tr(),
+                        style: TextStyle(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: Text(
+                            'ok'.tr(),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.description_outlined,
+                title: 'terms'.tr(),
+                onTap: () => _showTermsSheet(context),
+              ),
+            ]),
 
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'assistance'.tr()),
-          _buildSettingsCard(context, [
-            _buildSettingTile(
-              context: context,
-              icon: Icons.report_problem_outlined,
-              title: 'report_problem'.tr(),
-              subtitle: 'report_problem_subtitle'.tr(),
-              onTap: () => _reportProblem(context),
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.help_outline_rounded,
-              title: 'help_faq'.tr(),
-              subtitle: 'help_faq_subtitle'.tr(),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const HelpScreen()),
-                );
-              },
-            ),
-          ]),
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'assistance'.tr()),
+            _buildSettingsCard(context, [
+              _buildSettingTile(
+                context: context,
+                icon: Icons.report_problem_outlined,
+                title: 'report_problem'.tr(),
+                subtitle: 'report_problem_subtitle'.tr(),
+                onTap: () => _reportProblem(context),
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.help_outline_rounded,
+                title: 'help_faq'.tr(),
+                subtitle: 'help_faq_subtitle'.tr(),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HelpScreen()),
+                  );
+                },
+              ),
+            ]),
 
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'contact'.tr()),
-          _buildSupportCard(context),
-          const SizedBox(height: 12),
-          _buildSettingsCard(context, [
-            _buildSettingTile(
-              context: context,
-              icon: Icons.copy_rounded,
-              title: 'copy_whatsapp_number'.tr(),
-              subtitle: AppConfig.whatsappDisplay,
-              onTap: () => _copyWhatsAppNumber(context),
-            ),
-          ]),
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'contact'.tr()),
+            _buildSupportCard(context),
 
-          const SizedBox(height: 24),
-          _buildSectionTitle(context, 'about_section'.tr()),
-          _buildSettingsCard(context, [
-            _buildSettingTile(
-              context: context,
-              icon: Icons.info_outline,
-              title: 'about'.tr(),
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => InfoBottomSheet(
-                    title: 'about'.tr(),
-                    subtitle: 'Version ${AppConfig.appVersion}',
-                    content: 'about_zoli_desc'.tr(),
-                    icon: Icons.info_outline,
-                  ),
-                );
-              },
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.code,
-              title: 'about_developer'.tr(),
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => InfoBottomSheet(
-                    title: 'about_developer'.tr(),
-                    subtitle: 'Ulrich IDOHOU',
-                    content: 'about_dev_desc'.tr(),
-                    icon: Icons.person,
-                  ),
-                );
-              },
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.star_border,
-              title: 'rate'.tr(),
-              onTap: () => _showRateDialog(context),
-            ),
-            _buildDivider(context),
-            _buildSettingTile(
-              context: context,
-              icon: Icons.share,
-              title: 'share'.tr(),
-              onTap: () => UnioneShareSheet.show(context),
-            ),
-          ]),
+            const SizedBox(height: 24),
+            _buildSectionTitle(context, 'about_section'.tr()),
+            _buildSettingsCard(context, [
+              _buildSettingTile(
+                context: context,
+                icon: Icons.info_outline,
+                title: 'about'.tr(),
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => InfoBottomSheet(
+                      title: 'about'.tr(),
+                      subtitle: 'Version ${AppConfig.appVersion}',
+                      content: 'about_zoli_desc'.tr(),
+                      icon: Icons.info_outline,
+                    ),
+                  );
+                },
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.code,
+                title: 'about_developer'.tr(),
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => InfoBottomSheet(
+                      title: 'about_developer'.tr(),
+                      subtitle: 'Ulrich IDOHOU',
+                      content: 'about_dev_desc'.tr(),
+                      icon: Icons.person,
+                    ),
+                  );
+                },
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.star_border,
+                title: 'rate'.tr(),
+                onTap: () => _showRateDialog(context),
+              ),
+              _buildDivider(context),
+              _buildSettingTile(
+                context: context,
+                icon: Icons.share,
+                title: 'share'.tr(),
+                onTap: () => UnioneShareSheet.show(context),
+              ),
+            ]),
 
-          const SizedBox(height: 40),
-        ],
+            const SizedBox(height: 40),
+          ],
         ),
       ),
     );
@@ -393,20 +365,6 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showSimHelpSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (context) => InfoBottomSheet(
-        title: 'sim_help_title'.tr(),
-        subtitle: 'sim_help_subtitle'.tr(),
-        content: 'sim_help_desc'.tr(),
-        icon: Icons.sim_card_outlined,
-      ),
-    );
-  }
-
   void _showSecuritySheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -439,91 +397,37 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  void _showRateDialog(BuildContext context) {
-    int selectedStars = 5;
-    final primaryColor = Theme.of(context).colorScheme.primary;
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(28),
-              ),
-              title: Text(
-                'rate_title'.tr(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'rate_subtitle'.tr(),
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      final starNumber = index + 1;
-                      return IconButton(
-                        icon: Icon(
-                          starNumber <= selectedStars
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
-                          color: Colors.amber,
-                          size: 42,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            selectedStars = starNumber;
-                          });
-                        },
-                      );
-                    }),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'cancel'.tr(),
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.5),
-                    ),
-                  ),
-                ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  onPressed: () => Navigator.pop(context),
-                  child: Text(
-                    'submit'.tr(),
-                    style: const TextStyle(fontWeight: FontWeight.w800),
-                  ),
-                ),
-              ],
-            );
-          },
+  void _showRateDialog(BuildContext context) => _rateApp(context);
+
+  /// Ouvre la fiche Play Store. Si le store n'est pas disponible (appareil sans
+  /// Play Store, build de test), bascule sur WhatsApp pour recueillir l'avis.
+  Future<void> _rateApp(BuildContext context) async {
+    final marketUri = Uri.parse('market://details?id=${AppConfig.packageId}');
+    final storeUri = Uri.parse(AppConfig.playStoreUrl);
+    try {
+      if (await canLaunchUrl(marketUri)) {
+        final opened = await launchUrl(
+          marketUri,
+          mode: LaunchMode.externalApplication,
         );
-      },
+        if (opened) return;
+      }
+    } catch (_) {
+      // On tente le lien HTTPS ci-dessous.
+    }
+    try {
+      if (await launchUrl(storeUri, mode: LaunchMode.externalApplication)) {
+        return;
+      }
+    } catch (_) {
+      // Repli WhatsApp.
+    }
+    if (!context.mounted) return;
+    await _launchWhatsApp(
+      context,
+      message:
+          'Bonjour, je souhaite donner mon avis sur UNIONE '
+          '(version ${AppConfig.appVersion}).',
     );
   }
 

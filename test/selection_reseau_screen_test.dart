@@ -6,11 +6,11 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:unione/screens/selection_reseau_screen.dart';
 import 'package:unione/services/codes_repository.dart';
 import 'package:unione/services/history_service.dart';
+import 'package:unione/models/reseau.dart';
+import 'package:unione/widgets/reseau_card.dart';
 
 Widget _wrap(Widget child) {
-  return MaterialApp(
-    home: child,
-  );
+  return MaterialApp(home: child);
 }
 
 void main() {
@@ -33,7 +33,9 @@ void main() {
   });
 
   group('SelectionReseauScreen widget', () {
-    testWidgets('affiche le skeleton pendant le chargement initial', (tester) async {
+    testWidgets('affiche le skeleton pendant le chargement initial', (
+      tester,
+    ) async {
       final previous = CodesRepository.instance.catalogue.value;
       CodesRepository.instance.catalogue.value = null;
       try {
@@ -45,7 +47,9 @@ void main() {
       }
     });
 
-    testWidgets('affiche les cartes réseau après chargement du catalogue', (tester) async {
+    testWidgets('affiche les cartes réseau après chargement du catalogue', (
+      tester,
+    ) async {
       await tester.pumpWidget(_wrap(const SelectionReseauScreen()));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
@@ -84,7 +88,9 @@ void main() {
       expect(find.text('Résultats'), findsOneWidget);
     });
 
-    testWidgets('le bouton Paramètres est présent dans le header', (tester) async {
+    testWidgets('le bouton Paramètres est présent dans le header', (
+      tester,
+    ) async {
       SharedPreferences.setMockInitialValues({});
       await CodesRepository.instance.initialize();
 
@@ -93,6 +99,23 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+    });
+
+    testWidgets('les réseaux restent dans l\'ordre MTN, Moov, Celtiis', (
+      tester,
+    ) async {
+      await tester.pumpWidget(_wrap(const SelectionReseauScreen()));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final cards = tester
+          .widgetList<ReseauCard>(find.byType(ReseauCard))
+          .toList(growable: false);
+      expect(cards.map((card) => card.reseau.type).toList(), [
+        ReseauType.mtn,
+        ReseauType.moov,
+        ReseauType.celtiis,
+      ]);
     });
   });
 }

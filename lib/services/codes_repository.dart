@@ -52,16 +52,32 @@ class CodesRepository {
     }
     catalogue.value ??= await _readBundledTree();
 
-    // 2. Chargement des catalogues de forfaits
+    // 2. Chargement des catalogues de forfaits.
+    // Le JSON embarqué peut être plus récent que le cache laissé par une
+    // installation précédente : on garde toujours la version la plus haute.
+    CatalogsData? cachedCatalogsData;
     final cachedCatalogs = prefs.getString(_catalogsCacheKey);
     if (cachedCatalogs != null) {
       try {
-        catalogs.value = _decodeAndValidateCatalogs(cachedCatalogs);
+        cachedCatalogsData = _decodeAndValidateCatalogs(cachedCatalogs);
       } on FormatException {
         await prefs.remove(_catalogsCacheKey);
       }
     }
-    catalogs.value ??= await _readBundledCatalogs();
+
+    final currentCatalogs = catalogs.value;
+    if (currentCatalogs == null) {
+      final bundledCatalogs = await _readBundledCatalogs();
+      catalogs.value =
+          cachedCatalogsData != null &&
+              cachedCatalogsData.version >= bundledCatalogs.version
+          ? cachedCatalogsData
+          : bundledCatalogs;
+    } else if (cachedCatalogsData != null &&
+        cachedCatalogsData.version > currentCatalogs.version) {
+      // Un cache plus récent a été trouvé après le premier chargement.
+      catalogs.value = cachedCatalogsData;
+    }
 
     unawaited(refreshInBackground());
   }

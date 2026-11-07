@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_title">UNIONE</string>
+    <string name="widget_solde">Solde</string>
+    <string name="widget_internet">Internet</string>
+    <string name="widget_transfert">Transfert</string>
+    <string name="widget_forfait">Forfait</string>
+    <string name="shortcut_solde">Voir mon solde</string>
+    <string name="shortcut_internet">Forfaits internet</string>
+    <string name="shortcut_transfert">Transfert</string>
+    <string name="shortcut_forfait">Forfaits</string>
+</resources>

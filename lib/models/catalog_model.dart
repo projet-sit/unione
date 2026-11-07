@@ -259,7 +259,10 @@ class CatalogsData {
     if (rawCatalogs is Map<String, dynamic>) {
       for (final entry in rawCatalogs.entries) {
         if (entry.value is Map<String, dynamic>) {
-          parsed[entry.key] = CatalogModel.fromJson(entry.key, entry.value as Map<String, dynamic>);
+          parsed[entry.key] = CatalogModel.fromJson(
+            entry.key,
+            entry.value as Map<String, dynamic>,
+          );
         }
       }
     }

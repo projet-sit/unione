@@ -27,6 +27,10 @@ class _CatalogScreenState extends State<CatalogScreen>
   TabController? _tabController;
   int _selectedTabIndex = 0;
 
+  int? _maxBudget;
+  String _sortMode = 'price';
+  final Set<String> _compareIds = {};
+
   @override
   void dispose() {
     _tabController?.dispose();
@@ -70,6 +74,166 @@ class _CatalogScreenState extends State<CatalogScreen>
         operatorName: operatorName,
         catalogLabel: catalogLabel,
         verifiedAt: verifiedAt,
+      ),
+    );
+  }
+
+  void _toggleCompare(OfferModel offer) {
+    if (_compareIds.contains(offer.id)) {
+      setState(() => _compareIds.remove(offer.id));
+      return;
+    }
+    if (_compareIds.length >= 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Sélectionnez au maximum 2 offres à comparer.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _compareIds.add(offer.id));
+  }
+
+  void _showComparison(CatalogModel catalog, OperatorTree operator) {
+    final offers = catalog.offers
+        .where((offer) => _compareIds.contains(offer.id))
+        .toList();
+    if (offers.length != 2) return;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            20 + MediaQuery.viewInsetsOf(sheetContext).bottom,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Comparer les offres',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Theme.of(sheetContext).colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _CompareColumn(
+                      offer: offers[0],
+                      operator: operator,
+                      onLaunch: () => ServiceLauncher.launchOffer(
+                        sheetContext,
+                        catalog: catalog,
+                        offer: offers[0],
+                        operator: operator,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _CompareColumn(
+                      offer: offers[1],
+                      operator: operator,
+                      onLaunch: () => ServiceLauncher.launchOffer(
+                        sheetContext,
+                        catalog: catalog,
+                        offer: offers[1],
+                        operator: operator,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _offerControls(List<OfferModel> offers) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                const Text(
+                  'Budget :',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                ),
+                const SizedBox(width: 8),
+                ...[1000, 2000, 5000].map((amount) {
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      visualDensity: VisualDensity.compact,
+                      label: Text('≤ $amount F'),
+                      selected: _maxBudget == amount,
+                      onSelected: (selected) {
+                        setState(() => _maxBudget = selected ? amount : null);
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              PopupMenuButton<String>(
+                initialValue: _sortMode,
+                tooltip: 'Trier les offres',
+                onSelected: (value) => setState(() => _sortMode = value),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'price', child: Text('Prix croissant')),
+                  PopupMenuItem(
+                    value: 'volume',
+                    child: Text('Volume décroissant'),
+                  ),
+                ],
+                child: Chip(
+                  avatar: Icon(
+                    Icons.sort_rounded,
+                    size: 16,
+                    color: colorScheme.primary,
+                  ),
+                  label: Text(
+                    _sortMode == 'volume' ? 'Volume' : 'Prix',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${offers.length} offre${offers.length > 1 ? 's' : ''}',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface.withValues(alpha: 0.5),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -202,50 +366,146 @@ class _CatalogScreenState extends State<CatalogScreen>
                 child: activeTabs.isEmpty
                     ? _buildEmptyOffers(context)
                     : TabBarView(
-                      controller: _tabController,
-                      children: activeTabs.map((tab) {
-                        final tabOffers =
-                            catalog.offers
-                                .where((o) => o.tab == tab.id)
-                                .toList()
-                              ..sort((a, b) => a.price.compareTo(b.price));
+                        controller: _tabController,
+                        children: activeTabs.map((tab) {
+                          final tabOffers = catalog.offers
+                              .where((o) => o.tab == tab.id)
+                              .toList();
+                          final visibleOffers = tabOffers
+                              .where(
+                                (offer) =>
+                                    _maxBudget == null ||
+                                    offer.price <= _maxBudget!,
+                              )
+                              .toList();
+                          if (_sortMode == 'volume') {
+                            visibleOffers.sort((a, b) {
+                              final volumeA = a.dataVolumeMb ?? 0;
+                              final volumeB = b.dataVolumeMb ?? 0;
+                              return volumeB.compareTo(volumeA);
+                            });
+                          } else {
+                            visibleOffers.sort(
+                              (a, b) => a.price.compareTo(b.price),
+                            );
+                          }
 
-                        final List<Widget> items = [];
-                        if (catalog.payWith.length > 1) {
-                          items.add(
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 14),
-                              child: _PaymentSelector(catalog: catalog),
-                            ),
-                          );
-                        }
-                        if (isOutdated) {
-                          items.add(
-                            Container(
-                              margin: const EdgeInsets.only(bottom: 14),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.amber.shade700.withValues(
-                                    alpha: 0.4,
+                          final List<Widget> items = [];
+                          items.add(_offerControls(visibleOffers));
+                          if (catalog.payWith.length > 1) {
+                            items.add(
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _PaymentSelector(catalog: catalog),
+                              ),
+                            );
+                          }
+                          if (isOutdated) {
+                            items.add(
+                              Container(
+                                margin: const EdgeInsets.only(bottom: 14),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.amber.shade700.withValues(
+                                      alpha: 0.4,
+                                    ),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Colors.amber.shade800,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Expanded(
+                                      child: Text(
+                                        'Ces tarifs peuvent avoir changé récemment.',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          }
+                          if (visibleOffers.isEmpty) {
+                            items.add(
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 24),
+                                child: Center(
+                                  child: Text(
+                                    'Aucune offre dans ce budget.',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
                               ),
-                              child: Row(
+                            );
+                          }
+                          items.addAll(
+                            visibleOffers.map(
+                              (offer) => _OfferCard(
+                                offer: offer,
+                                catalog: catalog,
+                                operator: operator,
+                                isBestValue: offer.id == bestOfferId,
+                                compareSelected: _compareIds.contains(offer.id),
+                                onCompare: () => _toggleCompare(offer),
+                                onTap: () => ServiceLauncher.launchOffer(
+                                  context,
+                                  catalog: catalog,
+                                  offer: offer,
+                                  operator: operator,
+                                ),
+                              ),
+                            ),
+                          );
+                          items.add(const SizedBox(height: 20));
+                          items.add(
+                            Center(
+                              child: Column(
                                 children: [
-                                  Icon(
-                                    Icons.warning_amber_rounded,
-                                    color: Colors.amber.shade800,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Expanded(
-                                    child: Text(
-                                      'Ces tarifs peuvent avoir changé récemment.',
+                                  if (catalog.verifiedAt != null)
+                                    Text(
+                                      'Tarifs mis à jour le ${catalog.verifiedAt}',
                                       style: TextStyle(
-                                        fontSize: 13,
+                                        fontSize: 12,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
                                         fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 6),
+                                  TextButton.icon(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: operatorColor,
+                                      visualDensity: VisualDensity.compact,
+                                    ),
+                                    onPressed: () => _reportIncorrectTariff(
+                                      context: context,
+                                      operatorName: operator.name,
+                                      catalogLabel: catalog.label,
+                                      verifiedAt: catalog.verifiedAt,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.report_problem_outlined,
+                                      size: 16,
+                                    ),
+                                    label: const Text(
+                                      'Signaler un tarif incorrect',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ),
@@ -253,80 +513,38 @@ class _CatalogScreenState extends State<CatalogScreen>
                               ),
                             ),
                           );
-                        }
-                        items.addAll(
-                          tabOffers.map(
-                            (offer) => _OfferCard(
-                              offer: offer,
-                              catalog: catalog,
-                              operator: operator,
-                              isBestValue: offer.id == bestOfferId,
-                              onTap: () => ServiceLauncher.launchOffer(
-                                context,
-                                catalog: catalog,
-                                offer: offer,
-                                operator: operator,
-                              ),
-                            ),
-                          ),
-                        );
-                        items.add(const SizedBox(height: 20));
-                        items.add(
-                          Center(
-                            child: Column(
-                              children: [
-                                if (catalog.verifiedAt != null)
-                                  Text(
-                                    'Tarifs mis à jour le ${catalog.verifiedAt}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.5),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                const SizedBox(height: 6),
-                                TextButton.icon(
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: operatorColor,
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  onPressed: () => _reportIncorrectTariff(
-                                    context: context,
-                                    operatorName: operator.name,
-                                    catalogLabel: catalog.label,
-                                    verifiedAt: catalog.verifiedAt,
-                                  ),
-                                  icon: const Icon(
-                                    Icons.report_problem_outlined,
-                                    size: 16,
-                                  ),
-                                  label: const Text(
-                                    'Signaler un tarif incorrect',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
 
-                        return ListView.builder(
-                          key: PageStorageKey<String>(
-                            'catalog_${widget.catalogId}_${tab.id}',
-                          ),
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-                          itemCount: items.length,
-                          itemBuilder: (context, index) => items[index],
-                        );
-                      }).toList(),
-                    ),
+                          return ListView.builder(
+                            key: PageStorageKey<String>(
+                              'catalog_${widget.catalogId}_${tab.id}',
+                            ),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                            itemCount: items.length,
+                            itemBuilder: (context, index) => items[index],
+                          );
+                        }).toList(),
+                      ),
               ),
+              bottomNavigationBar: _compareIds.length == 2
+                  ? SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                        child: FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: operatorColor,
+                            foregroundColor: headerFgColor,
+                            minimumSize: const Size.fromHeight(48),
+                          ),
+                          onPressed: () => _showComparison(catalog, operator),
+                          icon: const Icon(Icons.compare_arrows_rounded),
+                          label: const Text(
+                            'Comparer les 2 offres',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
             );
           },
         );
@@ -392,6 +610,8 @@ class _OfferCard extends StatelessWidget {
   final CatalogModel catalog;
   final OperatorTree operator;
   final bool isBestValue;
+  final bool compareSelected;
+  final VoidCallback onCompare;
   final VoidCallback onTap;
 
   const _OfferCard({
@@ -399,6 +619,8 @@ class _OfferCard extends StatelessWidget {
     required this.catalog,
     required this.operator,
     required this.isBestValue,
+    required this.compareSelected,
+    required this.onCompare,
     required this.onTap,
   });
 
@@ -406,14 +628,16 @@ class _OfferCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final isToTest = offer.confidence == 'to_test';
-    final isUnconfirmedTitle = offer.title == 'à confirmer';
+    final isOfficial = offer.confidence == 'official';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: compareSelected
+            ? Border.all(color: OperatorLogo.accent(context, operator.color))
+            : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
@@ -437,27 +661,16 @@ class _OfferCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Titre ou Libellé "à confirmer"
-                      if (isUnconfirmedTitle)
-                        Text(
-                          'Tarif à confirmer',
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: Colors.amber.shade800,
-                          ),
-                        )
-                      else
-                        Text(
-                          offer.title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: theme.colorScheme.onSurface,
-                          ),
+                      Text(
+                        offer.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w900,
+                          color: theme.colorScheme.onSurface,
                         ),
+                      ),
 
                       if (offer.validityLabel != null) ...[
                         const SizedBox(height: 4),
@@ -476,7 +689,7 @@ class _OfferCard extends StatelessWidget {
                       // Badges
                       if (isBestValue ||
                           offer.badges.isNotEmpty ||
-                          isToTest) ...[
+                          isOfficial) ...[
                         const SizedBox(height: 8),
                         Wrap(
                           spacing: 6,
@@ -535,23 +748,34 @@ class _OfferCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (isToTest && !isUnconfirmedTitle)
+                            if (isOfficial)
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 7,
                                   vertical: 2,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: Colors.amber.withValues(alpha: 0.16),
+                                  color: Colors.green.withValues(alpha: 0.14),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
-                                child: Text(
-                                  'À confirmer',
-                                  style: TextStyle(
-                                    color: Colors.amber.shade900,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.verified_rounded,
+                                      size: 11,
+                                      color: Colors.green,
+                                    ),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      'Vérifié',
+                                      style: TextStyle(
+                                        color: Colors.green,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                           ],
@@ -563,7 +787,7 @@ class _OfferCard extends StatelessWidget {
 
                 const SizedBox(width: 14),
 
-                // Colonne de droite : Prix et flèche
+                // Colonne de droite : Prix et bouton de comparaison
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
@@ -585,13 +809,31 @@ class _OfferCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 4),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      visualDensity: VisualDensity.compact,
+                      tooltip: compareSelected
+                          ? 'Retirer de la comparaison'
+                          : 'Comparer cette offre',
+                      onPressed: onCompare,
+                      icon: Icon(
+                        compareSelected
+                            ? Icons.check_circle_rounded
+                            : Icons.compare_arrows_rounded,
+                        size: 20,
+                        color: compareSelected
+                            ? OperatorLogo.accent(context, operator.color)
+                            : theme.colorScheme.onSurface.withValues(
+                                alpha: 0.35,
+                              ),
+                      ),
+                    ),
                   ],
-                ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-                  size: 22,
                 ),
               ],
             ),
@@ -673,6 +915,105 @@ class _PaymentSelectorState extends State<_PaymentSelector> {
                   onSelected: (_) => _select(option.id),
                 );
               }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Colonne compacte du comparateur : les informations essentielles seulement.
+class _CompareColumn extends StatelessWidget {
+  final OfferModel offer;
+  final OperatorTree operator;
+  final VoidCallback onLaunch;
+
+  const _CompareColumn({
+    required this.offer,
+    required this.operator,
+    required this.onLaunch,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            offer.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${offer.price} FCFA',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w900,
+              color: OperatorLogo.accent(context, operator.color),
+            ),
+          ),
+          if (offer.validityLabel != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              offer.validityLabel!,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+          ],
+          if (offer.contents.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            ...offer.contents
+                .take(3)
+                .map(
+                  (line) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Text(
+                      '• $line',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1.3,
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.75,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: OperatorLogo.accent(context, operator.color),
+                foregroundColor:
+                    OperatorLogo.accent(
+                          context,
+                          operator.color,
+                        ).computeLuminance() >
+                        0.5
+                    ? Colors.black
+                    : Colors.white,
+                visualDensity: VisualDensity.compact,
+              ),
+              onPressed: onLaunch,
+              child: const Text(
+                'Choisir',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+              ),
             ),
           ),
         ],

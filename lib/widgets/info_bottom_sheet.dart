@@ -49,16 +49,10 @@ class InfoBottomSheet extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(
-                          alpha: 0.1,
-                        ),
+                        color: colorScheme.primary.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        icon,
-                        color: colorScheme.primary,
-                        size: 32,
-                      ),
+                      child: Icon(icon, color: colorScheme.primary, size: 32),
                     ),
                     const SizedBox(width: 16),
                     Expanded(

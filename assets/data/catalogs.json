@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "updatedAt": "2026-11-06",
+  "version": 3,
+  "updatedAt": "2026-11-07",
   "catalogs": {
     "celtiis_connect": {
       "operator": "celtiis",
@@ -20,7 +20,7 @@
         { "id": "celtiis_connect_500", "tab": "daily", "price": 500, "title": "1 Go", "validityLabel": "24 heures", "badges": ["WhatsApp gratuit", "TikTok gratuit", "Facebook gratuit"], "hint": "Choisissez Connect 500", "confidence": "official" },
         { "id": "celtiis_connect_750", "tab": "daily", "price": 750, "title": "1,22 Go", "validityLabel": "3 jours", "badges": ["WhatsApp gratuit"], "confidence": "official" },
         { "id": "celtiis_connect_1000", "tab": "weekly", "price": 1000, "title": "1,63 Go", "validityLabel": "7 jours", "confidence": "official" },
-        { "id": "celtiis_connect_2500", "tab": "monthly", "price": 2500, "title": "4,07 Go", "validityLabel": "validité non lisible sur la page", "confidence": "to_test" },
+        { "id": "celtiis_connect_2500", "tab": "monthly", "price": 2500, "title": "4,07 Go", "validityLabel": "15 jours", "confidence": "official" },
         { "id": "celtiis_connect_5000", "tab": "monthly", "price": 5000, "title": "8,14 Go", "validityLabel": "30 jours", "confidence": "official" }
       ]
     },
@@ -120,14 +120,14 @@
         { "id": "airtime", "label": "Crédit principal", "code": "*123*5#" },
         { "id": "moov_money", "label": "Moov Money", "code": "*855*3*2#" }
       ],
-      "source": "https://www.moov-africa.bj/",
+      "source": "https://www.moov-africa.bj/forfaits-internet-illimites/",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "moov_illi_15000", "tab": "monthly", "price": 15000, "title": "24,41 Go+", "validityLabel": "30 jours", "badges": ["2 Mbps après volume"], "confidence": "to_test" },
-        { "id": "moov_illi_20000", "tab": "monthly", "price": 20000, "title": "32,55 Go+", "validityLabel": "30 jours", "badges": ["3 Mbps après volume"], "confidence": "to_test" },
-        { "id": "moov_illi_25000", "tab": "monthly", "price": 25000, "title": "40,69 Go+", "validityLabel": "30 jours", "badges": ["5 Mbps après volume"], "confidence": "to_test" },
-        { "id": "moov_illi_30000", "tab": "monthly", "price": 30000, "title": "48,83 Go+", "validityLabel": "30 jours", "badges": ["10 Mbps après volume"], "confidence": "to_test" },
-        { "id": "moov_illi_50000", "tab": "monthly", "price": 50000, "title": "81,38 Go+", "validityLabel": "30 jours", "badges": ["10 Mbps après volume"], "confidence": "to_test" }
+        { "id": "moov_illi_15000", "tab": "monthly", "price": 15000, "title": "24,41 Go+", "validityLabel": "30 jours", "badges": ["2 Mbps après volume"], "confidence": "official" },
+        { "id": "moov_illi_20000", "tab": "monthly", "price": 20000, "title": "32,55 Go+", "validityLabel": "30 jours", "badges": ["3 Mbps après volume"], "confidence": "official" },
+        { "id": "moov_illi_25000", "tab": "monthly", "price": 25000, "title": "40,69 Go+", "validityLabel": "30 jours", "badges": ["5 Mbps après volume"], "confidence": "official" },
+        { "id": "moov_illi_30000", "tab": "monthly", "price": 30000, "title": "48,83 Go+", "validityLabel": "30 jours", "badges": ["10 Mbps après volume"], "confidence": "official" },
+        { "id": "moov_illi_50000", "tab": "monthly", "price": 50000, "title": "81,38 Go+", "validityLabel": "30 jours", "badges": ["10 Mbps après volume"], "confidence": "official" }
       ]
     },
     "moov_secours": {
@@ -136,13 +136,13 @@
       "tabs": [
         { "id": "daily", "label": "Quotidien" }
       ],
-      "launch": { "mode": "menu", "code": "*123#" },
-      "source": "https://www.moov-africa.bj/",
+      "launch": { "mode": "menu", "code": "*123*9#" },
+      "source": "https://www.moov-africa.bj/moov-forfaits-internet-secours/",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "moov_sec_100", "tab": "daily", "price": 100, "title": "À rembourser 110 F", "validityLabel": "24 heures", "hint": "Internet secours", "confidence": "to_test" },
-        { "id": "moov_sec_200", "tab": "daily", "price": 200, "title": "À rembourser 220 F", "validityLabel": "24 heures", "hint": "Internet secours", "confidence": "to_test" },
-        { "id": "moov_sec_500", "tab": "daily", "price": 500, "title": "À rembourser 550 F", "validityLabel": "3 jours", "hint": "Internet secours", "confidence": "to_test" }
+        { "id": "moov_sec_100", "tab": "daily", "price": 100, "title": "75 Mo", "validityLabel": "24 heures", "badges": ["Rembourser 100 FCFA"], "hint": "Choisir Internet Secours 75 Mo", "confidence": "official" },
+        { "id": "moov_sec_200", "tab": "daily", "price": 220, "title": "170 Mo", "validityLabel": "24 heures", "badges": ["Rembourser 220 FCFA"], "hint": "Choisir Internet Secours 170 Mo", "confidence": "official" },
+        { "id": "moov_sec_500", "tab": "daily", "price": 550, "title": "450 Mo", "validityLabel": "3 jours", "badges": ["Rembourser 550 FCFA"], "hint": "Choisir Internet Secours 450 Mo", "confidence": "official" }
       ]
     },
     "moov_combo": {
@@ -177,16 +177,16 @@
         { "id": "monthly", "label": "Mensuel" }
       ],
       "launch": { "mode": "direct", "code": "*173*1*{price}#" },
-      "source": "https://www.moov-africa.bj/",
+      "source": "https://www.moov-africa.bj/moov-pass-bonus/",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "moov_bonus_100", "tab": "daily", "price": 100, "title": "165 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "to_test" },
-        { "id": "moov_bonus_150", "tab": "daily", "price": 150, "title": "250 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "to_test" },
-        { "id": "moov_bonus_200", "tab": "daily", "price": 200, "title": "335 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "to_test" },
-        { "id": "moov_bonus_500", "tab": "daily", "price": 500, "title": "840 F d'unités (Appel + Net)", "validityLabel": "3 jours", "confidence": "to_test" },
-        { "id": "moov_bonus_1000", "tab": "weekly", "price": 1000, "title": "1 660 F d'unités (Appel + Net)", "validityLabel": "7 jours", "confidence": "to_test" },
-        { "id": "moov_bonus_2500", "tab": "monthly", "price": 2500, "title": "4 150 F d'unités (Appel + Net)", "validityLabel": "15 jours", "confidence": "to_test" },
-        { "id": "moov_bonus_5000", "tab": "monthly", "price": 5000, "title": "8 400 F d'unités (Appel + Net)", "validityLabel": "30 jours", "confidence": "to_test" }
+        { "id": "moov_bonus_100", "tab": "daily", "price": 100, "title": "165 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "moov_bonus_150", "tab": "daily", "price": 150, "title": "250 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "moov_bonus_200", "tab": "daily", "price": 200, "title": "335 F d'unités (Appel + Net)", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "moov_bonus_500", "tab": "daily", "price": 500, "title": "840 F d'unités (Appel + Net)", "validityLabel": "3 jours", "confidence": "official" },
+        { "id": "moov_bonus_1000", "tab": "weekly", "price": 1000, "title": "1 660 F d'unités (Appel + Net)", "validityLabel": "7 jours", "confidence": "official" },
+        { "id": "moov_bonus_2500", "tab": "monthly", "price": 2500, "title": "4 150 F d'unités (Appel + Net)", "validityLabel": "15 jours", "confidence": "official" },
+        { "id": "moov_bonus_5000", "tab": "monthly", "price": 5000, "title": "8 400 F d'unités (Appel + Net)", "validityLabel": "30 jours", "confidence": "official" }
       ]
     },
     "mtn_illimite": {
@@ -249,12 +249,12 @@
       "source": "Campagne ZoTchéZé 2026",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "mtn_zo_100", "tab": "daily", "price": 100, "title": "à confirmer", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" },
-        { "id": "mtn_zo_200", "tab": "daily", "price": 200, "title": "à confirmer", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" },
-        { "id": "mtn_zo_250", "tab": "no_expiry", "price": 250, "title": "à confirmer", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" },
-        { "id": "mtn_zo_500", "tab": "daily", "price": 500, "title": "à confirmer", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" },
-        { "id": "mtn_zo_1250", "tab": "no_expiry", "price": 1250, "title": "à confirmer", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" },
-        { "id": "mtn_zo_5000", "tab": "no_expiry", "price": 5000, "title": "à confirmer", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "to_test" }
+        { "id": "mtn_zo_100", "tab": "daily", "price": 100, "title": "416 Mo", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" },
+        { "id": "mtn_zo_200", "tab": "daily", "price": 200, "title": "833 Mo", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" },
+        { "id": "mtn_zo_250", "tab": "no_expiry", "price": 250, "title": "1 Go Plus", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" },
+        { "id": "mtn_zo_500", "tab": "daily", "price": 500, "title": "2 Go", "validityLabel": "24 heures", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" },
+        { "id": "mtn_zo_1250", "tab": "no_expiry", "price": 1250, "title": "5 Go Plus", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" },
+        { "id": "mtn_zo_5000", "tab": "no_expiry", "price": 5000, "title": "20 Go Plus", "validityLabel": "Sans expiration", "hint": "Si le code direct échoue, tapez *123#", "confidence": "third_party" }
       ]
     },
     "mtn_gopack": {
@@ -265,17 +265,17 @@
         { "id": "weekly", "label": "Hebdomadaire" },
         { "id": "monthly", "label": "Mensuel" }
       ],
-      "launch": { "mode": "direct", "code": "*133*77*{price}#" },
-      "source": "https://www.mtn.bj/",
+      "launch": { "mode": "direct", "code": "*172*77*{price}#" },
+      "source": "https://my.mtn.bj/particuliers/forfaits/gopack/activation-forfait-gopack/614/",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "mtn_go_100", "tab": "daily", "price": 100, "title": "3 min · 3 Mo · 3 SMS", "validityLabel": "24 heures", "confidence": "third_party" },
-        { "id": "mtn_go_150", "tab": "daily", "price": 150, "title": "5 min · 5 Mo · 5 SMS", "validityLabel": "24 heures", "confidence": "third_party" },
-        { "id": "mtn_go_200", "tab": "daily", "price": 200, "title": "7 min · 7 Mo · 7 SMS", "validityLabel": "24 heures", "confidence": "third_party" },
-        { "id": "mtn_go_300", "tab": "daily", "price": 300, "title": "11 min · 11 Mo · 11 SMS", "validityLabel": "24 heures", "confidence": "third_party" },
-        { "id": "mtn_go_500", "tab": "daily", "price": 500, "title": "19 min · 19 Mo", "validityLabel": "24 heures", "confidence": "third_party" },
-        { "id": "mtn_go_1000", "tab": "weekly", "price": 1000, "title": "35 min · 35 Mo", "validityLabel": "7 jours", "confidence": "third_party" },
-        { "id": "mtn_go_1500", "tab": "weekly", "price": 1500, "title": "60 min · 60 Mo", "validityLabel": "7 jours", "confidence": "third_party" },
+        { "id": "mtn_go_100", "tab": "daily", "price": 100, "title": "3 min · 3 Mo · 3 SMS", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "mtn_go_150", "tab": "daily", "price": 150, "title": "5 min · 5 Mo · 5 SMS", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "mtn_go_200", "tab": "daily", "price": 200, "title": "7 min · 7 Mo · 7 SMS", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "mtn_go_300", "tab": "daily", "price": 300, "title": "11 min · 11 Mo · 11 SMS", "validityLabel": "24 heures", "confidence": "official" },
+        { "id": "mtn_go_500", "tab": "daily", "price": 500, "title": "19 min · 19 Mo", "validityLabel": "48 heures", "confidence": "official" },
+        { "id": "mtn_go_1000", "tab": "weekly", "price": 1000, "title": "35 min · 35 Mo", "validityLabel": "7 jours", "confidence": "official" },
+        { "id": "mtn_go_1500", "tab": "weekly", "price": 1500, "title": "60 min · 60 Mo", "validityLabel": "7 jours", "confidence": "official" },
         { "id": "mtn_go_2500", "tab": "monthly", "price": 2500, "title": "80 min · 80 Mo · 80 SMS", "validityLabel": "20 jours", "confidence": "third_party" },
         { "id": "mtn_go_5000", "tab": "monthly", "price": 5000, "title": "175 min · 175 Mo · 175 SMS", "validityLabel": "30 jours", "confidence": "third_party" }
       ]
@@ -288,18 +288,18 @@
         { "id": "weekly", "label": "Hebdomadaire" },
         { "id": "monthly", "label": "Mensuel" }
       ],
-      "launch": { "mode": "menu", "code": "*123#" },
-      "source": "https://www.mtn.bj/",
+      "launch": { "mode": "direct", "code": "*173*77*{price}#" },
+      "source": "https://www.facebook.com/mtnbeninofficiel/posts/tu-nas-pas-le-temps-nous-non-pluscest-pour-%C3%A7a-quon-ta-pr%C3%A9par%C3%A9-des-codes-courts-p/1099170875714224/",
       "verifiedAt": "2026-11-06",
       "offers": [
-        { "id": "mtn_maxi_100", "tab": "daily", "price": 100, "title": "200 F de crédit d'appels", "validityLabel": "24 heures", "hint": "Choisir Maxi 100F", "confidence": "third_party" },
-        { "id": "mtn_maxi_150", "tab": "daily", "price": 150, "title": "325 F de crédit d'appels", "validityLabel": "24 heures", "hint": "Choisir Maxi 150F", "confidence": "third_party" },
-        { "id": "mtn_maxi_200", "tab": "daily", "price": 200, "title": "450 F de crédit d'appels", "validityLabel": "24 heures", "hint": "Choisir Maxi 200F", "confidence": "third_party" },
-        { "id": "mtn_maxi_500", "tab": "daily", "price": 500, "title": "999 F de crédit d'appels", "validityLabel": "3 jours", "hint": "Choisir Maxi 500F", "confidence": "third_party" },
-        { "id": "mtn_maxi_1000", "tab": "weekly", "price": 1000, "title": "1 575 F de crédit d'appels", "validityLabel": "7 jours", "hint": "Choisir Maxi 1000F", "confidence": "third_party" },
-        { "id": "mtn_maxi_1500", "tab": "weekly", "price": 1500, "title": "2 545 F de crédit d'appels", "validityLabel": "7 jours", "hint": "Choisir Maxi 1500F", "confidence": "third_party" },
-        { "id": "mtn_maxi_2500", "tab": "monthly", "price": 2500, "title": "3 500 F de crédit d'appels", "validityLabel": "20 jours", "hint": "Choisir Maxi 2500F", "confidence": "third_party" },
-        { "id": "mtn_maxi_5000", "tab": "monthly", "price": 5000, "title": "6 500 F de crédit d'appels", "validityLabel": "30 jours", "hint": "Choisir Maxi 5000F", "confidence": "third_party" }
+        { "id": "mtn_maxi_100", "tab": "daily", "price": 100, "title": "200 F de crédit d'appels", "validityLabel": "24 heures", "confidence": "third_party" },
+        { "id": "mtn_maxi_150", "tab": "daily", "price": 150, "title": "325 F de crédit d'appels", "validityLabel": "24 heures", "confidence": "third_party" },
+        { "id": "mtn_maxi_200", "tab": "daily", "price": 200, "title": "450 F de crédit d'appels", "validityLabel": "24 heures", "confidence": "third_party" },
+        { "id": "mtn_maxi_500", "tab": "daily", "price": 500, "title": "999 F de crédit d'appels", "validityLabel": "3 jours", "confidence": "third_party" },
+        { "id": "mtn_maxi_1000", "tab": "weekly", "price": 1000, "title": "1 575 F de crédit d'appels", "validityLabel": "7 jours", "confidence": "third_party" },
+        { "id": "mtn_maxi_1500", "tab": "weekly", "price": 1500, "title": "2 545 F de crédit d'appels", "validityLabel": "7 jours", "confidence": "third_party" },
+        { "id": "mtn_maxi_2500", "tab": "monthly", "price": 2500, "title": "3 500 F de crédit d'appels", "validityLabel": "20 jours", "confidence": "third_party" },
+        { "id": "mtn_maxi_5000", "tab": "monthly", "price": 5000, "title": "6 500 F de crédit d'appels", "validityLabel": "30 jours", "confidence": "third_party" }
       ]
     }
   }

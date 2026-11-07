@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../models/history_item.dart';
+import '../models/menu_node.dart';
+import '../services/codes_repository.dart';
 import '../services/history_service.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/skeleton_loader.dart';
+import '../widgets/service_launcher.dart';
 
 /// Écran affichant l'historique complet des actions de l'utilisateur.
 /// Permet de filtrer par texte, par réseau et par date.
@@ -261,7 +264,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final isSelected = onClear != null;
-    final hint = isSelected ? 'Appuyez pour changer, filtre actif : $label' : label;
+    final hint = isSelected
+        ? 'Appuyez pour changer, filtre actif : $label'
+        : label;
     return Semantics(
       label: hint,
       button: true,
@@ -434,10 +439,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         } catch (_) {
           localeStr = 'fr_FR';
         }
-        header = DateFormat(
-          'dd MMMM yyyy',
-          localeStr,
-        ).format(itemDate);
+        header = DateFormat('dd MMMM yyyy', localeStr).format(itemDate);
       }
 
       if (!groupedHistory.containsKey(header)) {
@@ -500,6 +502,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
+  /// Relance l'opération d'une entrée d'historique.
+  ///
+  /// L'historique ne conserve ni code, ni montant, ni numéro : on retrouve le
+  /// service (ou le forfait) dans le catalogue embarqué, puis on repasse par
+  /// [ServiceLauncher], qui redemande les éventuels paramètres.
+  Future<void> _redo(HistoryItem item) async {
+    final serviceId = item.serviceId;
+    if (serviceId == null) return;
+    final tree = CodesRepository.instance.catalogue.value;
+    if (tree == null) return;
+
+    final node = tree.node(serviceId);
+    if (node != null && node.type != MenuNodeType.menu) {
+      final operator = tree.operatorFor(node.id);
+      if (operator != null) {
+        await ServiceLauncher.launchNode(
+          context,
+          node: node,
+          operator: operator,
+        );
+        return;
+      }
+    }
+
+    final catalogs = CodesRepository.instance.catalogs.value;
+    if (catalogs == null) return;
+    for (final catalog in catalogs.catalogs.values) {
+      final offer = catalog.offers
+          .where((candidate) => candidate.id == serviceId)
+          .firstOrNull;
+      if (offer == null) continue;
+      final operator = tree.operators
+          .where(
+            (candidate) =>
+                candidate.id.toLowerCase() == catalog.operator.toLowerCase(),
+          )
+          .firstOrNull;
+      if (operator == null) return;
+      if (!mounted) return;
+      await ServiceLauncher.launchOffer(
+        context,
+        catalog: catalog,
+        offer: offer,
+        operator: operator,
+      );
+      return;
+    }
+  }
+
   Widget _buildHistoryCard(HistoryItem item) {
     final colorScheme = Theme.of(context).colorScheme;
     final typeColor = _getTypeColor(item.type);
@@ -509,106 +560,125 @@ class _HistoryScreenState extends State<HistoryScreen> {
         '${item.title.tr()}, ${_getLocalizedDescription(item)}$networkPart, à $timeStr';
 
     return Semantics(
-          label: semanticLabel,
-          excludeSemantics: true,
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.02),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ExcludeSemantics(
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: typeColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Icon(
-                      _getTypeIcon(item.type),
-                      color: typeColor,
-                      size: 24,
-                    ),
-                  ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ExcludeSemantics(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: typeColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                child: Icon(
+                  _getTypeIcon(item.type),
+                  color: typeColor,
+                  size: 24,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            item.title.tr(),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Text(
-                            timeStr,
-                            style: TextStyle(
-                              color: colorScheme.onSurface.withValues(alpha: 0.4),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
                       Text(
-                        _getLocalizedDescription(item),
+                        item.title.tr(),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: colorScheme.onSurface.withValues(alpha: 0.6),
-                          fontSize: 14,
-                          height: 1.4,
-                          fontWeight: FontWeight.w500,
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
                         ),
                       ),
-                      if (item.network != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            item.network!,
-                            style: TextStyle(
-                              color: colorScheme.primary,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
-                            ),
-                          ),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                      ),
                     ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 6),
+                  Text(
+                    _getLocalizedDescription(item),
+                    style: TextStyle(
+                      color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      fontSize: 14,
+                      height: 1.4,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (item.network != null) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        item.network!,
+                        style: TextStyle(
+                          color: colorScheme.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (item.type == HistoryType.ussdLaunch &&
+                      item.serviceId != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => _redo(item),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        icon: const Icon(Icons.replay_rounded, size: 18),
+                        label: const Text(
+                          'Refaire',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-        );
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildEmptyState() {

@@ -15,15 +15,21 @@ class AppConfig {
   /// Version affichée dans les messages d'assistance.
   static const String appVersion = '1.0.0+2';
 
+  /// Identifiant de publication Android (utilisé par le Play Store).
+  static const String packageId = 'com.zoli.app';
+
+  /// Fiche Play Store de l'application.
+  static const String playStoreUrl =
+      'https://play.google.com/store/apps/details?id=$packageId';
+
   /// Lien public de partage.
   ///
-  /// À remplacer dès la publication sur le Play Store :
+  /// Pointe par défaut vers la fiche Play Store. Il peut être remplacé au
+  /// build pour utiliser un site dédié :
   /// `flutter build apk --dart-define=UNIONE_SHARE_URL=https://...`.
-  /// Tant que la valeur n'est pas une URL valide, le lien est omis du
-  /// message partagé pour ne jamais envoyer de texte technique à un tiers.
   static const String shareUrl = String.fromEnvironment(
     'UNIONE_SHARE_URL',
-    defaultValue: 'TODO_REMPLACER',
+    defaultValue: 'https://play.google.com/store/apps/details?id=com.zoli.app',
   );
 
   static bool get hasShareUrl =>

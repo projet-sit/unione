@@ -23,10 +23,10 @@ Ce document recense les correspondances, sources et écarts relevés entre les c
 | Service | Code officiel / App | Source | Statut / Confiance | Remarques |
 |---|---|---|---|---|
 | Forfaits Internet (Volume) | `*123#` | Moov Officiel (06/11/2026) | `official` | Mode `menu`. Compatible paiement par Moov Money via `*855*3*2#`. |
-| Internet Illimité | `*123*5#` | Moov Officiel (06/11/2026) | `to_test` | Mode `menu`. Paliers 15 000 F à 50 000 F. Débits après épuisement à vérifier sur SIM. |
-| Internet Secours | `*123#` | Moov Officiel | `to_test` | Mode `menu`. Emprunt de volume data avec remboursement à la recharge. |
+| Internet Illimité | `*123*5#` | Moov Officiel (06/11/2026) | `official` | Mode `menu`. Paliers 15 000 F à 50 000 F, 24,41 Go+ à 81,38 Go+, 30 jours. Débits après épuisement à vérifier sur SIM. |
+| Internet Secours | `*123*9#` | Moov Officiel (07/11/2026) | `official` | Mode `menu`. Emprunt 75 Mo / 170 Mo / 450 Mo, remboursement 100 / 220 / 550 FCFA (24 h / 24 h / 3 jours). |
 | Moov Combo | `*173*{price}#` | Moov Officiel (06/11/2026) | `official` | Mode `direct`. Formule voix + sms + data. |
-| Moov Pass Bonus | `*173*1*{price}#` | Moov Officiel (06/11/2026) | `to_test` | Mode `direct`. Consultation solde : `*173*5*2#`. Activation pour tiers : `*173*4*1#`. |
+| Moov Pass Bonus | `*173*1*{price}#` | Moov Officiel (07/11/2026) | `official` | Mode `direct`. 100 F → 165, 150 F → 250, 200 F → 335, 500 F → 840, 1 000 F → 1 660, 2 500 F → 4 150, 5 000 F → 8 400. Consultation solde : `*173*5*2#`. |
 | Moov Money Achat Forfait | `*855*3*2#` | Moov Officiel | `official` | Paiement d'un forfait via Moov Money. |
 | Solde principal | `*104#` | Moov Officiel | `official` | Code direct standard. |
 
@@ -38,11 +38,29 @@ Ce document recense les correspondances, sources et écarts relevés entre les c
 |---|---|---|---|---|
 | Forfaits Illimités | `*123*77*{price}#` | MTN Officiel (06/11/2026) | `official` | Mode `direct`. Option paiement MoMo : `*880*123*77*{price}#`. Débit réduit à 1 Mbps après volume. |
 | Forfaits Volume Mensuels | `*123*77*{price}#` | MTN Officiel (grille 2023/2026) | `third_party` | Mode `direct`. Grille mensuelle 15 500 F à 50 000 F. |
-| Forfaits Petit Budget (ZoTchéZé) | `*123*77*{price}#` / `*123#` | Campagne ZoTchéZé 2026 | `to_test` | Volumes contradictoires selon les sources de presse. Libellés "à confirmer" tant que non validés sur MyMTN. |
-| Go Pack (mixte) | `*133*77*{price}#` | MTN Officiel | `third_party` | Mode `direct`. Voix + data + SMS. |
-| Forfaits Maxi (Appels) | `*123#` | MTN Officiel | `third_party` | Mode `menu`. Anciennement `*173#`. |
+| Forfaits Petit Budget (ZoTchéZé) | `*123*77*{price}#` / `*123#` | Campagne ZoTchéZé 2026 (presse spécialisée) | `third_party` | Grille 2026 : 416 Mo à 100 F, 833 Mo à 200 F, 1 Go Plus à 250 F, 2 Go à 500 F, 5 Go Plus à 1 250 F, 20 Go Plus à 5 000 F. À confronter à MyMTN lors d'une prochaine vérification. |
+| Go Pack (mixte) | `*172*77*{price}#` | MTN Officiel (07/11/2026) | `official` | Mode `direct`. Voix + data + SMS. Paliers 100 F à 1 500 F confirmés sur MyMTN (500 F = 48 h) ; 2 500 F et 5 000 F restent issus de sources tierces. |
+| Forfaits Maxi (Appels) | `*173*77*{price}#` | MTN Officiel (07/11/2026) | `official` | Mode `direct`. Code officiel par palier ; montants de crédit encore issus de sources tierces. |
 | XtraTime (Secours) | `*785#` | MTN Officiel | `official` | Emprunt crédit + 10 % frais. |
 | Statut forfait volume | `*123*2#` | MTN Officiel | `official` | Consultation du solde du forfait volume. |
 | Désactiver forfait volume | `*123*7#` | MTN Officiel | `official` | Code officiel corrigé (`*123*7#` au lieu de `*123*7*#`). |
 | Réactiver forfait Extra | `*119#` | MTN Officiel | `official` | Réactivation avec bonus Extra. |
 | Solde principal | `*126#` | Code embarqué prioritaire | `low` | `*126#` conservé par priorité app. `*123#` est réservé au portail forfaits. |
+
+---
+
+## 4. Résolution de la destination USSD d'une offre
+
+Lorsqu'une offre est lancée depuis un catalogue, la destination est choisie
+dans cet ordre :
+
+1. `offer.launch` — code propre à l'offre ;
+2. `offer.payWith` — option de paiement propre à l'offre ;
+3. option de `catalog.payWith` réellement spécifique (elle contient `{price}`
+   ou pointe vers la même destination que `catalog.launch`) ;
+4. `catalog.launch` — menu ou code direct du catalogue.
+
+Une option de paiement générique (par exemple le menu Moov Money
+`*855*3*2#`) ne remplace jamais la destination du catalogue : elle est ignorée
+au profit de `catalog.launch`.
+

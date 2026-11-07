@@ -15,12 +15,13 @@ class OperatorLogo extends StatelessWidget {
   });
 
   static const _assets = <String, String>{
-    'mtn': 'assets/logos/mtn.jpg',
-    'moov': 'assets/logos/moov.jpg',
-    'celtiis': 'assets/logos/celtiis.jpg',
+    'mtn': 'assets/logos/mtn.png',
+    'moov': 'assets/logos/moov.png',
+    'celtiis': 'assets/logos/celtiis.png',
   };
 
-  static List<String> get availableAssets => _assets.values.toList(growable: false);
+  static List<String> get availableAssets =>
+      _assets.values.toList(growable: false);
 
   /// Fond de marque (échantillonné sur les fichiers officiels).
   static const _tileColors = <String, Color>{
@@ -46,9 +47,10 @@ class OperatorLogo extends StatelessWidget {
     if (assetPath == null) {
       return SizedBox.square(dimension: size);
     }
-    // Celtiis : la capture fournie a une bordure blanche — zoom léger pour la
-    // masquer ; les autres gardent leur fond de marque déjà rempli complet.
-    final zoom = operatorId == 'celtiis' ? 1.14 : 1.0;
+    // Rendu à la densité réelle de l'écran : sans cela l'image est décodée en
+    // pixels logiques puis agrandie par le GPU, ce qui rend les logos flous.
+    final pixelRatio = MediaQuery.maybeDevicePixelRatioOf(context) ?? 1.0;
+    final cacheSize = (size * pixelRatio).round().clamp(1, 4096);
     final radius = borderRadius ?? size * 0.3;
     return SizedBox.square(
       dimension: size,
@@ -56,19 +58,23 @@ class OperatorLogo extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: ColoredBox(
           color: tileColor(operatorId),
-              child: Transform.scale(
-                scale: zoom,
-                child: Image.asset(
-                  assetPath,
-                  width: size * 0.82,
-                  height: size * 0.82,
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
-                  filterQuality: FilterQuality.high,
-                  cacheWidth: (size * 0.82).toInt(),
-                  cacheHeight: (size * 0.82).toInt(),
-                ),
+          child: Center(
+            // Léger décalage vers le bas : les logos paraissent mieux centrés
+            // optiquement dans leur tuile.
+            child: Transform.translate(
+              offset: Offset(0, size * 0.025),
+              child: Image.asset(
+                assetPath,
+                width: size,
+                height: size,
+                fit: BoxFit.contain,
+                gaplessPlayback: true,
+                filterQuality: FilterQuality.high,
+                cacheWidth: cacheSize,
+                cacheHeight: cacheSize,
               ),
+            ),
+          ),
         ),
       ),
     );

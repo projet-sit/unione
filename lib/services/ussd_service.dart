@@ -12,6 +12,7 @@ import '../models/history_item.dart';
 import 'android_ussd_gateway.dart';
 import 'history_service.dart';
 import 'security_service.dart';
+import 'user_preferences_service.dart';
 
 class UssdService {
   static final LocalAuthentication _auth = LocalAuthentication();
@@ -109,7 +110,7 @@ class UssdService {
       );
     }
 
-    final permissionGranted = await _requestPhonePermission();
+    final permissionGranted = await _requestPhonePermission(context);
     if (!context.mounted) return false;
 
     if (!permissionGranted) {
@@ -185,10 +186,49 @@ class UssdService {
   );
 
   /// Demande la permission d'appel via le dialogue système Android.
-  /// Aucun écran intermédiaire Flutter : le système gère l'autorisation.
-  static Future<bool> _requestPhonePermission() async {
+  ///
+  /// Une explication est affichée une seule fois avant le dialogue système :
+  /// les utilisateurs acceptent mieux une autorisation qu'ils comprennent.
+  static Future<bool> _requestPhonePermission(BuildContext context) async {
     if (await Permission.phone.isGranted) return true;
     if (await Permission.phone.isPermanentlyDenied) return false;
+
+    final primingSeen = await UserPreferencesService.instance
+        .phonePrimingSeen();
+    if (!primingSeen) {
+      if (!context.mounted) return false;
+      final accepted = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          title: const Text(
+            'Autoriser les appels USSD',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          content: const Text(
+            'UNIONE utilise l’autorisation Téléphone uniquement pour lancer '
+            'le code USSD que vous choisissez. Android gère la carte SIM et '
+            'aucun appel n’est enregistré.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Plus tard'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Continuer'),
+            ),
+          ],
+        ),
+      );
+      await UserPreferencesService.instance.setPhonePrimingSeen();
+      if (accepted != true || !context.mounted) return false;
+    }
+
+    if (!context.mounted) return false;
     return (await Permission.phone.request()).isGranted;
   }
 

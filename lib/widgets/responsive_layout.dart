@@ -25,11 +25,9 @@ class SafePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isNarrow = width < kNarrowWidth;
-    final effectivePadding = padding ??
-        EdgeInsets.symmetric(
-          horizontal: isNarrow ? 20 : 24,
-          vertical: 16,
-        );
+    final effectivePadding =
+        padding ??
+        EdgeInsets.symmetric(horizontal: isNarrow ? 20 : 24, vertical: 16);
     final constrainedWidth = width - effectivePadding.horizontal;
 
     return SafeArea(

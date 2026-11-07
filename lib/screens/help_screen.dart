@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/responsive_layout.dart';
+import 'onboarding_screen.dart';
 
 /// Aide statique : questions fréquentes, sans dépendance réseau.
 class HelpScreen extends StatelessWidget {
@@ -79,55 +80,68 @@ class HelpScreen extends StatelessWidget {
       body: SafePage(
         child: ListView.separated(
           padding: EdgeInsets.zero,
-          itemCount: _faq.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, index) {
-          final item = _faq[index];
-          return Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: colorScheme.onSurface.withValues(alpha: 0.06),
-              ),
-            ),
-            child: Theme(
-              data: Theme.of(
-                context,
-              ).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                shape: const Border(),
-                collapsedShape: const Border(),
-                iconColor: colorScheme.primary,
-                collapsedIconColor: colorScheme.onSurface.withValues(
-                  alpha: 0.4,
-                ),
-                title: Text(
-                  item.question,
-                  style: TextStyle(
-                    color: colorScheme.onSurface,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
+          itemCount: _faq.length + 1,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              return OutlinedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        OnboardingScreen(onDone: () => Navigator.pop(context)),
                   ),
                 ),
-                childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item.answer,
-                      style: TextStyle(
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
+                icon: const Icon(Icons.slideshow_rounded),
+                label: const Text("Revoir l'introduction"),
+              );
+            }
+            final item = _faq[index - 1];
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardTheme.color,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: colorScheme.onSurface.withValues(alpha: 0.06),
+                ),
+              ),
+              child: Theme(
+                data: Theme.of(
+                  context,
+                ).copyWith(dividerColor: Colors.transparent),
+                child: ExpansionTile(
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  iconColor: colorScheme.primary,
+                  collapsedIconColor: colorScheme.onSurface.withValues(
+                    alpha: 0.4,
+                  ),
+                  title: Text(
+                    item.question,
+                    style: TextStyle(
+                      color: colorScheme.onSurface,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        item.answer,
+                        style: TextStyle(
+                          color: colorScheme.onSurface.withValues(alpha: 0.7),
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
         ),
       ),
     );

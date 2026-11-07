@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="solde"
+        android:shortcutLongLabel="@string/shortcut_solde"
+        android:shortcutShortLabel="@string/shortcut_solde">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zoli.app.MainActivity"
+            android:targetPackage="com.zoli.app">
+            <extra
+                android:name="unione_quick_action"
+                android:value="solde" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="internet"
+        android:shortcutLongLabel="@string/shortcut_internet"
+        android:shortcutShortLabel="@string/shortcut_internet">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zoli.app.MainActivity"
+            android:targetPackage="com.zoli.app">
+            <extra
+                android:name="unione_quick_action"
+                android:value="internet" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="transfert"
+        android:shortcutLongLabel="@string/shortcut_transfert"
+        android:shortcutShortLabel="@string/shortcut_transfert">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zoli.app.MainActivity"
+            android:targetPackage="com.zoli.app">
+            <extra
+                android:name="unione_quick_action"
+                android:value="transfert" />
+        </intent>
+    </shortcut>
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutId="forfait"
+        android:shortcutLongLabel="@string/shortcut_forfait"
+        android:shortcutShortLabel="@string/shortcut_forfait">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.zoli.app.MainActivity"
+            android:targetPackage="com.zoli.app">
+            <extra
+                android:name="unione_quick_action"
+                android:value="forfait" />
+        </intent>
+    </shortcut>
+</shortcuts>

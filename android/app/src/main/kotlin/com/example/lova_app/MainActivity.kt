@@ -19,7 +19,15 @@ class MainActivity : FlutterActivity() {
     private val channelName = "com.zoli.app/unione_ussd"
     private val deviceChannelName = "com.zoli.app/unione_device"
     private val apkChannelName = "com.zoli.app/unione_apk"
+    private val quickActionChannelName = "com.zoli.app/unione_quick_actions"
     private val tag = "UNIONE/USSD"
+
+    private var quickActionChannel: MethodChannel? = null
+    private var pendingQuickAction: String? = null
+
+    companion object {
+        const val EXTRA_QUICK_ACTION = "unione_quick_action"
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -44,6 +52,34 @@ class MainActivity : FlutterActivity() {
                 "prepareApkShare" -> prepareApkShare(result)
                 else -> result.notImplemented()
             }
+        }
+        // Actions rapides du widget et des raccourcis d'icône.
+        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, quickActionChannelName)
+        quickActionChannel = channel
+        channel.setMethodCallHandler { call, result ->
+            when (call.method) {
+                "getInitialAction" -> {
+                    result.success(pendingQuickAction)
+                    pendingQuickAction = null
+                }
+                else -> result.notImplemented()
+            }
+        }
+        pendingQuickAction = intent?.getStringExtra(EXTRA_QUICK_ACTION)?.takeIf { it.isNotBlank() }
+        intent?.removeExtra(EXTRA_QUICK_ACTION)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val action = intent.getStringExtra(EXTRA_QUICK_ACTION)?.takeIf { it.isNotBlank() }
+            ?: return
+        intent.removeExtra(EXTRA_QUICK_ACTION)
+        val channel = quickActionChannel
+        if (channel == null) {
+            pendingQuickAction = action
+        } else {
+            channel.invokeMethod("quickAction", action)
         }
     }
 

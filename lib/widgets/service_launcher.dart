@@ -37,15 +37,18 @@ class ServiceLauncher {
     }
     final code = node.code!;
     if (node.launchKind == 'call') {
-      await UssdService.launchPhoneNumber(
+      final launched = await UssdService.launchPhoneNumber(
         context,
         code,
         title: node.label,
         network: operator.name,
         serviceId: node.id,
       );
+      if (launched) {
+        await UserPreferencesService.instance.addRecent('n:${node.id}');
+      }
     } else {
-      await UssdService.launchUssd(
+      final launched = await UssdService.launchUssd(
         context,
         code,
         title: node.label,
@@ -53,6 +56,9 @@ class ServiceLauncher {
         operatorId: operator.id,
         serviceId: node.id,
       );
+      if (launched) {
+        await UserPreferencesService.instance.addRecent('n:${node.id}');
+      }
     }
   }
 
@@ -62,13 +68,12 @@ class ServiceLauncher {
     required OfferModel offer,
     required OperatorTree operator,
   }) async {
-    final options = offer.payWith ?? catalog.payWith;
-    final savedId = await UserPreferencesService.instance
-        .catalogPayment(catalog.id);
-    final code = _resolveOfferCode(
+    final savedId = await UserPreferencesService.instance.catalogPayment(
+      catalog.id,
+    );
+    final code = resolveOfferCode(
       catalog: catalog,
       offer: offer,
-      options: options,
       selectedId: savedId,
     );
     if (code.isEmpty) {
@@ -86,7 +91,7 @@ class ServiceLauncher {
     }
     if (!context.mounted) return;
     final title = '${catalog.label} : ${offer.title} (${offer.price} F)';
-    await UssdService.launchUssd(
+    final launched = await UssdService.launchUssd(
       context,
       code,
       title: title,
@@ -94,44 +99,89 @@ class ServiceLauncher {
       operatorId: operator.id,
       serviceId: offer.id,
     );
+    if (launched) {
+      await UserPreferencesService.instance.addRecent(
+        'o:${catalog.id}:${offer.id}',
+      );
+    }
   }
 
   static Future<void> savePaymentOption({
     required String catalogId,
     required String optionId,
-  }) =>
-      UserPreferencesService.instance.saveCatalogPayment(catalogId, optionId);
+  }) => UserPreferencesService.instance.saveCatalogPayment(catalogId, optionId);
 
-  static String _resolveOfferCode({
+  /// Choisit la destination USSD la plus précise disponible pour une offre.
+  ///
+  /// Priorité :
+  /// 1. `offer.launch` : code propre à l'offre.
+  /// 2. option de paiement propre à l'offre (ex. `offer.payWith`).
+  /// 3. option de catalogue réellement spécifique : elle contient `{price}`
+  ///    ou pointe vers la même destination que `catalog.launch`.
+  /// 4. `catalog.launch` : menu ou code direct du catalogue.
+  ///
+  /// Les options génériques d'un catalogue (ex. le menu Moov Money `*855*3*2#`)
+  /// ne doivent jamais écraser la destination du catalogue : sinon toutes les
+  /// offres atterrissent sur le même menu générique.
+  @visibleForTesting
+  static String resolveOfferCode({
     required CatalogModel catalog,
     required OfferModel offer,
-    required List<CatalogPaymentOption> options,
     required String? selectedId,
   }) {
-    String template;
-    if (options.isNotEmpty) {
-      final selected = options.firstWhere(
-        (option) => option.id == selectedId,
-        orElse: () => options.first,
-      );
-      template = selected.code;
-    } else if (offer.launch != null) {
-      template = offer.launch!.code;
-    } else {
-      template = catalog.launch.code;
+    final offerLaunch = offer.launch;
+    if (offerLaunch != null && offerLaunch.code.isNotEmpty) {
+      return _fillPrice(offerLaunch.code, offer.price);
     }
-    return template.replaceAll('{price}', offer.price.toString());
+
+    final offerOptions = offer.payWith;
+    if (offerOptions != null && offerOptions.isNotEmpty) {
+      final selected = _selectedOption(offerOptions, selectedId);
+      return _fillPrice(selected.code, offer.price);
+    }
+
+    final catalogOptions = catalog.payWith;
+    if (catalogOptions.isNotEmpty) {
+      final selected = _selectedOption(catalogOptions, selectedId);
+      if (_isSpecificToCatalog(selected, catalog)) {
+        return _fillPrice(selected.code, offer.price);
+      }
+    }
+
+    return _fillPrice(catalog.launch.code, offer.price);
   }
 
-  static SnackBar _snackBar(String message, {int seconds = 3}) => SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        margin: const EdgeInsets.all(16),
-        duration: Duration(seconds: seconds),
-      );
+  static CatalogPaymentOption _selectedOption(
+    List<CatalogPaymentOption> options,
+    String? selectedId,
+  ) => options.firstWhere(
+    (option) => option.id == selectedId,
+    orElse: () => options.first,
+  );
 
-  static void _showInfo(BuildContext context, String message, {int seconds = 3}) {
-    ScaffoldMessenger.of(context).showSnackBar(_snackBar(message, seconds: seconds));
+  static bool _isSpecificToCatalog(
+    CatalogPaymentOption option,
+    CatalogModel catalog,
+  ) => option.code.contains('{price}') || option.code == catalog.launch.code;
+
+  static String _fillPrice(String template, int price) =>
+      template.replaceAll('{price}', price.toString());
+
+  static SnackBar _snackBar(String message, {int seconds = 3}) => SnackBar(
+    content: Text(message),
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    margin: const EdgeInsets.all(16),
+    duration: Duration(seconds: seconds),
+  );
+
+  static void _showInfo(
+    BuildContext context,
+    String message, {
+    int seconds = 3,
+  }) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(_snackBar(message, seconds: seconds));
   }
 }
