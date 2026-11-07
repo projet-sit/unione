@@ -44,6 +44,15 @@ class CodeParameter {
       notes: json['notes']?.toString(),
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    'key': key,
+    'type': type,
+    'label': label,
+    if (format != null) 'format': format,
+    if (options.isNotEmpty) 'options': options,
+    if (notes != null) 'notes': notes,
+  };
 }
 
 class MenuNode {

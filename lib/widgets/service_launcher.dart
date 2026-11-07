@@ -6,6 +6,7 @@ import '../models/menu_node.dart';
 import '../screens/action_screen.dart';
 import '../services/user_preferences_service.dart';
 import '../services/ussd_service.dart';
+import 'offer_recipient_sheet.dart';
 
 /// Point unique de lancement des opérations.
 /// Un tap lance directement le code USSD : plus d'écran de détail,
@@ -71,21 +72,71 @@ class ServiceLauncher {
     required CatalogModel catalog,
     required OfferModel offer,
     required OperatorTree operator,
+    OfferRecipient? recipient,
   }) async {
-    final savedId = await UserPreferencesService.instance.catalogPayment(
-      catalog.id,
-    );
-    final code = resolveOfferCode(
-      catalog: catalog,
-      offer: offer,
-      selectedId: savedId,
-    );
+    // Résout le code selon le destinataire : variante `self` (pour moi) ou
+    // variante `other` (pour un autre numéro), avec rétrocompatibilité sur
+    // `offer.launch` / `catalog.launch` si aucune variante n'est déclarée.
+    String code;
+    String? serviceIdSuffix;
+    if (recipient != null && !recipient.forSelf) {
+      final other = offer.other;
+      if (other == null || other.code == null || other.code!.isEmpty) {
+        if (context.mounted) {
+          _showInfo(context, 'Cette offre ne peut pas être activée pour un autre numéro.');
+        }
+        return;
+      }
+      // Valide et injecte le numéro de téléphone selon le format déclaré.
+      final phoneParam = other.params.where((p) => p.type == 'phone').firstOrNull;
+      if (phoneParam == null || recipient.phoneNumber == null) {
+        if (context.mounted) {
+          _showInfo(context, 'Numéro du bénéficiaire requis.');
+        }
+        return;
+      }
+      final values = <String, String>{
+        phoneParam.key: recipient.phoneNumber!,
+      };
+      code = UssdService.buildFromTemplate(
+        template: other.code!,
+        data: values,
+      );
+      serviceIdSuffix = 'other:${recipient.displayNumber ?? ''}';
+    } else {
+      // "Pour moi" : utilise `offer.self` si présent, sinon `offer.launch`,
+      // puis les options de paiement, puis `catalog.launch` (rétrocompatibilité).
+      final selfLaunch = offer.self;
+      if (selfLaunch != null && selfLaunch.code != null && selfLaunch.code!.isNotEmpty) {
+        code = selfLaunch.code!;
+      } else {
+        code = resolveOfferCode(
+          catalog: catalog,
+          offer: offer,
+          selectedId: null,
+        );
+      }
+      serviceIdSuffix = null;
+    }
+
+    // Remplace {price} si présent (rétrocompatibilité avec les anciens catalogues).
+    code = code.replaceAll('{price}', offer.price.toString());
+
     if (code.isEmpty) {
       if (context.mounted) {
         _showInfo(context, 'Activation indisponible pour ce forfait.');
       }
       return;
     }
+
+    // Validation : le code final ne doit jamais contenir de PIN.
+    if (RegExp(r'[pP][iI][nN]').hasMatch(code)) {
+      if (context.mounted) {
+        _showInfo(context, 'Ce code ne peut pas être lancé automatiquement.');
+      }
+      return;
+    }
+
     if (context.mounted && offer.hint?.isNotEmpty == true) {
       _showInfo(
         context,
@@ -94,14 +145,15 @@ class ServiceLauncher {
       );
     }
     if (!context.mounted) return;
-    final title = '${catalog.label} : ${offer.title} (${offer.price} F)';
+    final title =
+        '${catalog.label} : ${offer.title} (${offer.price} F)${recipient != null && !recipient.forSelf ? ' — ${recipient.displayNumber}' : ''}';
     final launched = await UssdService.launchUssd(
       context,
       code,
       title: title,
       network: operator.name,
       operatorId: operator.id,
-      serviceId: offer.id,
+      serviceId: serviceIdSuffix != null ? 'o:${catalog.id}:${offer.id}:$serviceIdSuffix' : 'o:${catalog.id}:${offer.id}',
     );
     if (launched) {
       // L'écriture d'historique récente ne bloque pas l'UI.

@@ -1,3 +1,5 @@
+import 'package:unione/models/menu_node.dart';
+
 class CatalogTab {
   final String id;
   final String label;
@@ -52,6 +54,30 @@ class CatalogPaymentOption {
   Map<String, dynamic> toJson() => {'id': id, 'label': label, 'code': code};
 }
 
+class OfferVariant {
+  final String? code;
+  final List<CodeParameter> params;
+
+  const OfferVariant({this.code, this.params = const []});
+
+  factory OfferVariant.fromJson(Map<String, dynamic> json) {
+    final rawParams = json['params'];
+    final params = (rawParams is List ? rawParams : const [])
+        .whereType<Map<String, dynamic>>()
+        .map(CodeParameter.fromJson)
+        .toList(growable: false);
+    return OfferVariant(
+      code: json['code']?.toString(),
+      params: params,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    if (code != null) 'code': code,
+    if (params.isNotEmpty) 'params': params.map((p) => p.toJson()).toList(),
+  };
+}
+
 class OfferModel {
   final String id;
   final String tab;
@@ -63,7 +89,10 @@ class OfferModel {
   final String? hint;
   final String confidence; // 'official', 'third_party', 'to_test'
   final String? verifiedAt;
+  final String? status; // 'ok', 'a_verifier', 'obsolete'
   final CatalogLaunch? launch;
+  final OfferVariant? self;       // Variante "pour moi"
+  final OfferVariant? other;      // Variante "pour un autre numéro"
   final List<CatalogPaymentOption>? payWith;
 
   const OfferModel({
@@ -77,7 +106,10 @@ class OfferModel {
     this.hint,
     required this.confidence,
     this.verifiedAt,
+    this.status,
     this.launch,
+    this.self,
+    this.other,
     this.payWith,
   });
 
@@ -134,8 +166,15 @@ class OfferModel {
       hint: json['hint']?.toString(),
       confidence: json['confidence']?.toString() ?? 'to_test',
       verifiedAt: json['verifiedAt']?.toString(),
+      status: json['status']?.toString(),
       launch: json['launch'] is Map<String, dynamic>
           ? CatalogLaunch.fromJson(json['launch'] as Map<String, dynamic>)
+          : null,
+      self: json['self'] is Map<String, dynamic>
+          ? OfferVariant.fromJson(json['self'] as Map<String, dynamic>)
+          : null,
+      other: json['other'] is Map<String, dynamic>
+          ? OfferVariant.fromJson(json['other'] as Map<String, dynamic>)
           : null,
       payWith: parsedPayWith,
     );
@@ -152,7 +191,10 @@ class OfferModel {
     if (hint != null) 'hint': hint,
     'confidence': confidence,
     if (verifiedAt != null) 'verifiedAt': verifiedAt,
+    if (status != null) 'status': status,
     if (launch != null) 'launch': launch!.toJson(),
+    if (self != null) 'self': self!.toJson(),
+    if (other != null) 'other': other!.toJson(),
     if (payWith != null) 'payWith': payWith!.map((p) => p.toJson()).toList(),
   };
 }

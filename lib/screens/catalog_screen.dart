@@ -6,6 +6,7 @@ import '../models/menu_node.dart';
 import '../services/codes_repository.dart';
 import '../services/user_preferences_service.dart';
 import '../services/whatsapp_launcher.dart';
+import '../widgets/offer_recipient_sheet.dart';
 import '../widgets/operator_logo.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/service_launcher.dart';
@@ -459,12 +460,37 @@ class _CatalogScreenState extends State<CatalogScreen>
                                 isBestValue: offer.id == bestOfferId,
                                 compareSelected: _compareIds.contains(offer.id),
                                 onCompare: () => _toggleCompare(offer),
-                                onTap: () => ServiceLauncher.launchOffer(
-                                  context,
-                                  catalog: catalog,
-                                  offer: offer,
-                                  operator: operator,
-                                ),
+                                onTap: () async {
+                                  final hasOther = offer.other != null &&
+                                      offer.other!.code != null &&
+                                      offer.other!.code!.isNotEmpty &&
+                                      (offer.status == null ||
+                                          offer.status == 'ok');
+                                  if (!hasOther) {
+                                    await ServiceLauncher.launchOffer(
+                                      context,
+                                      catalog: catalog,
+                                      offer: offer,
+                                      operator: operator,
+                                    );
+                                    return;
+                                  }
+                                  final recipient =
+                                      await OfferRecipientSheet.show(
+                                    context,
+                                    offer: offer,
+                                    operator: operator,
+                                  );
+                                  if (recipient == null) return;
+                                  if (!context.mounted) return;
+                                  await ServiceLauncher.launchOffer(
+                                    context,
+                                    catalog: catalog,
+                                    offer: offer,
+                                    operator: operator,
+                                    recipient: recipient,
+                                  );
+                                },
                               ),
                             ),
                           );
